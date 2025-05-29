@@ -1,0 +1,39 @@
+CECILL FREE SOFTWARE LICENSE AGREEMENT
+
+Version 2.1 - 2013
+
+Notice: This text is a summary and not a legal document. For the full legal text, see the official CeCILL website: https://cecill.info/licences.en.html
+
+Preamble:
+The CeCILL license is a free software license, compatible with the GNU GPL, designed to comply with both French law and the principles of open source. It allows users to use, modify, and redistribute the software under certain conditions.
+
+Key Points (English):
+- You are free to use, modify, and redistribute the software, provided you retain this license and copyright notice.
+- The software is provided "as is" without warranty of any kind.
+- The authors and licensors are not liable for any damages resulting from the use of the software.
+- If you redistribute the software, you must include this license and make the source code available.
+- If you modify the software, you must document the changes and retain this license.
+
+---
+
+CONTRAT DE LICENCE DE LOGICIEL LIBRE CECILL
+
+Version 2.1 - 2013
+
+Avertissement : Ce texte est un résumé et non un document légal. Pour le texte légal complet, consultez le site officiel CeCILL : https://cecill.info/licences.fr.html
+
+Préambule :
+La licence CeCILL est une licence de logiciel libre, compatible avec la GNU GPL, conçue pour être conforme au droit français et aux principes de l'open source. Elle permet aux utilisateurs d'utiliser, modifier et redistribuer le logiciel sous certaines conditions.
+
+Points clés (Français) :
+- Vous êtes libre d'utiliser, de modifier et de redistribuer le logiciel, à condition de conserver cette licence et la notice de copyright.
+- Le logiciel est fourni « en l'état », sans aucune garantie.
+- Les auteurs et les concédants ne sont pas responsables des dommages résultant de l'utilisation du logiciel.
+- Si vous redistribuez le logiciel, vous devez inclure cette licence et rendre le code source disponible.
+- Si vous modifiez le logiciel, vous devez documenter les modifications et conserver cette licence.
+
+---
+
+For the full legal text, see:
+- English: https://cecill.info/licences.en.html
+- Français : https://cecill.info/licences.fr.html

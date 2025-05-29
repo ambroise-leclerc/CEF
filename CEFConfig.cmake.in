@@ -1,0 +1,4 @@
+include(CMakeFindDependencyMacro)
+
+# Import the CEF target
+include(${CMAKE_CURRENT_LIST_DIR}/CEFTargets.cmake)
