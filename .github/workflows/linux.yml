@@ -1,0 +1,27 @@
+name: CEF Linux CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libx11-dev libxcomposite-dev libxcursor-dev libxdamage-dev libxext-dev libxfixes-dev libxi-dev libxrandr-dev libxrender-dev libxtst-dev libnss3 libatk1.0-0 libatk-bridge2.0-0 libgtk-3-dev libgbm-dev libdrm-dev libasound2-dev libxss-dev libxt-dev libxinerama-dev libxkbcommon-dev libxshmfence-dev libegl1-mesa-dev libgles2-mesa-dev
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v1
+        with:
+          cmake-version: '3.27.9'
+      - name: Configure
+        run: cmake -B build -S .
+      - name: Build
+        run: cmake --build build --config Release --target cef_sanity_test
+      - name: Run CEF sanity test
+        run: ./build/test/cef_sanity_test
