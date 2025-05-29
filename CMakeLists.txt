@@ -32,13 +32,10 @@ else()
     set(CEF_DLL_WRAPPER_LIB "")
 endif()
 
-add_executable(cef_sanity_test test/main.cpp)
-set_target_properties(cef_sanity_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test")
-target_include_directories(cef_sanity_test PRIVATE ${CEF_INCLUDE_DIR})
-target_link_libraries(cef_sanity_test PRIVATE ${CEF_LIBRARY_DIR}/libcef.so ${CEF_DLL_WRAPPER_LIB})
+# The cef_sanity_test target definition has been moved to test/CMakeLists.txt.
 
 enable_testing()
-add_test(NAME cef_sanity_test COMMAND cef_sanity_test)
+# The cef_sanity_test test command has been moved to test/CMakeLists.txt.
 
 # Install config for CPM consumers
 include(CMakePackageConfigHelpers)
