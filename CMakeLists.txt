@@ -12,6 +12,7 @@ set(CEF_URL "https://cef-builds.spotifycdn.com/${CEF_DIST_NAME}.tar.bz2")
 FetchContent_Declare(
     cef
     URL      ${CEF_URL}
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(cef)
 
