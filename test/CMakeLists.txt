@@ -4,8 +4,15 @@ project(cef_test LANGUAGES CXX)
 add_executable(cef_sanity_test main.cpp)
 target_include_directories(cef_sanity_test PRIVATE ${CEF_INCLUDE_DIR})
 target_link_directories(cef_sanity_test PRIVATE ${CEF_LIBRARY_DIR})
-target_link_libraries(cef_sanity_test PRIVATE ${CEF_LIBRARY_DIR}/libcef.so ${CMAKE_BINARY_DIR}/_deps/cef-build/libcef_dll_wrapper/libcef_dll_wrapper.a)
+# Define imported targets for CEF libraries
+add_library(libcef SHARED IMPORTED)
+set_target_properties(libcef PROPERTIES IMPORTED_LOCATION ${CEF_LIBRARY_DIR}/libcef.so)
 
+add_library(libcef_dll_wrapper STATIC IMPORTED)
+set_target_properties(libcef_dll_wrapper PROPERTIES IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/_deps/cef-build/libcef_dll_wrapper/libcef_dll_wrapper.a)
+
+# Link the imported targets to the executable
+target_link_libraries(cef_sanity_test PRIVATE libcef libcef_dll_wrapper)
 # For CEF, also link to required system libraries
 find_package(Threads REQUIRED)
 target_link_libraries(cef_sanity_test PRIVATE Threads::Threads dl X11)
