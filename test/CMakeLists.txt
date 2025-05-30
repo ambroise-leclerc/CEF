@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.15)
 project(cef_test LANGUAGES CXX)
 
 add_executable(cef_sanity_test main.cpp)
-target_include_directories(cef_sanity_test PRIVATE ${CEF_INCLUDE_DIR})
+# CEF headers expect the source directory as the include root, not just the include subdirectory
+target_include_directories(cef_sanity_test PRIVATE ${cef_SOURCE_DIR})
 target_link_directories(cef_sanity_test PRIVATE ${CEF_LIBRARY_DIR})
 
 # Define imported targets for CEF libraries only if not already defined
