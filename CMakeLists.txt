@@ -101,20 +101,24 @@ endif()
 # Create the main CEF interface library
 add_library(cef INTERFACE)
 
-# Define the libcef shared library target if not already defined
-if(NOT TARGET libcef)
-    if(APPLE)
-        # On macOS, link against the CEF framework
-        add_library(libcef INTERFACE)
-        target_link_libraries(libcef INTERFACE "${CEF_FRAMEWORK_PATH}/Chromium Embedded Framework")
-    else()
-        # On Linux, use the shared library
-        add_library(libcef SHARED IMPORTED)
-        set_target_properties(libcef PROPERTIES IMPORTED_LOCATION "${CEF_SO_PATH}")
-    endif()
+if(APPLE)
+    # On macOS, link directly to the framework and include headers
+    target_link_libraries(cef INTERFACE "${CEF_FRAMEWORK_PATH}/Chromium Embedded Framework")
+    target_include_directories(cef INTERFACE "${cef_SOURCE_DIR}")
+    
+    # Add required macOS system frameworks
+    find_library(COCOA_FRAMEWORK Cocoa REQUIRED)
+    find_library(APPKIT_FRAMEWORK AppKit REQUIRED)
+    target_link_libraries(cef INTERFACE ${COCOA_FRAMEWORK} ${APPKIT_FRAMEWORK})
+else()
+    # On Linux, link directly to the shared library
+    target_link_libraries(cef INTERFACE "${CEF_SO_PATH}")
+    target_include_directories(cef INTERFACE "${cef_SOURCE_DIR}")
 endif()
 
-target_link_libraries(cef INTERFACE libcef)
+# Create a libcef target for backward compatibility but don't export it
+add_library(libcef INTERFACE)
+target_link_libraries(libcef INTERFACE cef)
 
 # Build the CEF dll wrapper if it exists (for static linking)
 if(EXISTS "${cef_BINARY_DIR}/libcef_dll_wrapper/CMakeLists.txt")
@@ -137,6 +141,20 @@ write_basic_package_version_file(
     VERSION ${CEF_VERSION}
     COMPATIBILITY AnyNewerVersion
 )
+
+# Configure the config file
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/CEFConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/CEFConfig.cmake"
+    @ONLY
+)
+
+# Only export the main cef interface target
+# This avoids issues with exporting target dependencies
 install(TARGETS cef EXPORT CEFTargets)
+
 install(EXPORT CEFTargets FILE CEFTargets.cmake NAMESPACE CEF:: DESTINATION lib/cmake/CEF)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/CEFConfigVersion.cmake" DESTINATION lib/cmake/CEF)
+install(FILES 
+    "${CMAKE_CURRENT_BINARY_DIR}/CEFConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/CEFConfigVersion.cmake" 
+    DESTINATION lib/cmake/CEF)
