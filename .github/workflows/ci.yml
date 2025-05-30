@@ -1,4 +1,4 @@
-name: CEF Linux CI
+name: CEF CI
 
 on:
   push:
@@ -8,18 +8,32 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            install_deps: sudo apt-get update && sudo apt-get install -y ninja-build
+          - os: macos-latest
+            install_deps: brew install ninja
+    
+    runs-on: ${{ matrix.os }}
+    
     steps:
       - uses: actions/checkout@v4
+      
       - name: Install dependencies
-        run: sudo apt-get install -y cmake ninja-build
+        run: ${{ matrix.install_deps }}
+      
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1
         with:
           cmake-version: '3.27.9'
+      
       - name: Configure
         run: cmake -B build -S .
+      
       - name: Build
         run: cmake --build build --config Release --target cef_sanity_test
+      
       - name: Run CEF sanity test
         run: ./build/test/cef_sanity_test

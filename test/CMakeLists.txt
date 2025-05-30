@@ -2,19 +2,17 @@ cmake_minimum_required(VERSION 3.15)
 project(cef_test LANGUAGES CXX)
 
 add_executable(cef_sanity_test main.cpp)
-target_include_directories(cef_sanity_test PRIVATE ${CEF_INCLUDE_DIR})
-target_link_directories(cef_sanity_test PRIVATE ${CEF_LIBRARY_DIR})
-# Define imported targets for CEF libraries
-add_library(libcef SHARED IMPORTED)
-set_target_properties(libcef PROPERTIES IMPORTED_LOCATION ${CEF_LIBRARY_DIR}/libcef.so)
 
-add_library(libcef_dll_wrapper STATIC IMPORTED)
-set_target_properties(libcef_dll_wrapper PROPERTIES IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/_deps/cef-build/libcef_dll_wrapper/libcef_dll_wrapper.a)
+# Link against the main CEF target which includes all necessary dependencies
+target_link_libraries(cef_sanity_test PRIVATE cef)
 
-# Link the imported targets to the executable
-target_link_libraries(cef_sanity_test PRIVATE libcef libcef_dll_wrapper)
-# For CEF, also link to required system libraries
+# Try to link the CEF DLL wrapper if it was built
+if(TARGET libcef_dll_wrapper)
+    target_link_libraries(cef_sanity_test PRIVATE libcef_dll_wrapper)
+endif()
+
+# Platform-specific system libraries
 find_package(Threads REQUIRED)
-target_link_libraries(cef_sanity_test PRIVATE Threads::Threads dl X11)
+target_link_libraries(cef_sanity_test PRIVATE Threads::Threads)
 
 add_test(NAME cef_sanity_test COMMAND cef_sanity_test)
