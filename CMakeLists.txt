@@ -100,14 +100,6 @@ if(APPLE)
     get_filename_component(CEF_LIBRARY_DIR "${CEF_FRAMEWORK_PATH}" DIRECTORY CACHE)
 elseif(WIN32)
     # On Windows, libraries are typically in Release or Debug directory
-    # Debug: Show CEF source directory contents for Windows
-    message(STATUS "CEF source directory: ${cef_SOURCE_DIR}")
-    file(GLOB CEF_ROOT_FILES "${cef_SOURCE_DIR}/*")
-    message(STATUS "Contents of CEF source directory:")
-    foreach(file ${CEF_ROOT_FILES})
-        message(STATUS "  ${file}")
-    endforeach()
-    
     # Try to find the correct library directory
     set(CEF_LIBRARY_CANDIDATES 
         "${cef_SOURCE_DIR}/Release"
@@ -130,6 +122,13 @@ elseif(WIN32)
     endforeach()
     
     if(NOT CEF_LIBRARY_DIR)
+        # If we still can't find libraries, show debug info and fail
+        message(STATUS "CEF source directory: ${cef_SOURCE_DIR}")
+        file(GLOB CEF_ROOT_FILES "${cef_SOURCE_DIR}/*")
+        message(STATUS "Contents of CEF source directory:")
+        foreach(file ${CEF_ROOT_FILES})
+            message(STATUS "  ${file}")
+        endforeach()
         message(FATAL_ERROR "Could not find libcef.lib and libcef.dll in any expected location")
     endif()
 else()
