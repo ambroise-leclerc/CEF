@@ -4,9 +4,12 @@ project(CEF LANGUAGES CXX)
 include(FetchContent)
 
 # Detect platform and set CEF version and platform accordingly
-set(CEF_VERSION "137.0.4+g8614a8d+chromium-137.0.7151.6")
+# Using CEF version 118 which has good cross-platform support
+set(CEF_VERSION "118.7.1+g99817d2+chromium-118.0.5993.119")
 
 if(APPLE)
+    # For macOS, use macosx64 for both Intel and Apple Silicon
+    # CEF typically provides universal binaries or Intel binaries that work on both
     set(CEF_PLATFORM "macosx64")
     set(CEF_LIBRARY_EXTENSION "dylib")
 elseif(UNIX)
@@ -19,12 +22,26 @@ endif()
 set(CEF_DIST_NAME "cef_binary_${CEF_VERSION}_${CEF_PLATFORM}")
 set(CEF_URL "https://cef-builds.spotifycdn.com/${CEF_DIST_NAME}.tar.bz2")
 
+# Display the URL being used for debugging
+message(STATUS "CEF Platform: ${CEF_PLATFORM}")
+message(STATUS "CEF URL: ${CEF_URL}")
+
+# If the primary version fails, we could add fallback logic here
+# For now, let's try with the specified version
 FetchContent_Declare(
     cef
     URL      ${CEF_URL}
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
+
+# Add error handling for FetchContent
+set(FETCHCONTENT_QUIET OFF)
 FetchContent_MakeAvailable(cef)
+
+# Verify that CEF was successfully downloaded and extracted
+if(NOT EXISTS "${cef_SOURCE_DIR}/include/cef_version.h")
+    message(FATAL_ERROR "CEF download failed or CEF headers not found. Please check the CEF version and platform compatibility.")
+endif()
 
 # Only build the minimal sanity test, do not build CEF sample apps or tests
 # Do NOT remove CMakeLists.txt or tests from the CEF source tree, as this breaks the build system

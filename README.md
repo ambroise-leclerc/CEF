@@ -51,6 +51,10 @@ This CEF packaging supports the following platforms:
 
 The platform is automatically detected during the CMake configuration phase, and the appropriate CEF binary distribution is downloaded and configured.
 
+**Current CEF Version**: 118.7.1+g99817d2+chromium-118.0.5993.119
+
+This version is chosen for its stability and cross-platform availability. If you need a different CEF version, you can modify the `CEF_VERSION` variable in the main `CMakeLists.txt` file, but ensure that the version you choose has builds available for all platforms you intend to support.
+
 ## Prerequisites
 - Linux-based operating system or macOS
 - C++ compiler (GCC 11 or newer recommended on Linux, Xcode on macOS)
@@ -89,6 +93,23 @@ The project employs GitHub Actions for CI on both Linux and macOS. The workflow 
 ## Development Container
 
 A development container is provided via `.devcontainer/` for a reproducible development environment. It ensures the correct versions of CMake and Ninja are installed, matching the CI configuration.
+
+## Troubleshooting
+
+### CEF Download Issues
+If you encounter a 404 error when downloading CEF binaries, it usually means:
+1. The specified CEF version doesn't have a build for your platform
+2. The CEF version string format has changed
+
+To resolve this:
+1. Check the [CEF Builds](https://cef-builds.spotifycdn.com/) page for available versions
+2. Update the `CEF_VERSION` in `CMakeLists.txt` to a version that supports your platform
+3. Ensure the version string format matches what's available on the CDN
+
+### Platform Detection Issues
+The build system automatically detects your platform. If detection fails:
+- Ensure you're running on a supported platform (Linux x64 or macOS x64)
+- Check the CMake output for platform detection messages
 
 ## Licensing
 
