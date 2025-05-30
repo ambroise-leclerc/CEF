@@ -1,10 +1,10 @@
 # Chromium Embedded Framework (CEF) Packaging
 
-[![CI Status](https://github.com/<your-org-or-username>/CEF/actions/workflows/linux.yml/badge.svg)](https://github.com/<your-org-or-username>/CEF/actions/workflows/linux.yml)
+[![CI Status](https://github.com/<your-org-or-username>/CEF/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-org-or-username>/CEF/actions/workflows/ci.yml)
 
 ## Overview
 
-This repository provides a packaging solution for the Chromium Embedded Framework (CEF) on Linux, enabling seamless integration into C++ projects. The packaging is designed for use with [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake), allowing other projects to easily fetch and build CEF as a dependency.
+This repository provides a packaging solution for the Chromium Embedded Framework (CEF) on Linux and macOS, enabling seamless integration into C++ projects. The packaging is designed for use with [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake), allowing other projects to easily fetch and build CEF as a dependency.
 
 ## Usage
 
@@ -38,14 +38,22 @@ FetchContent_MakeAvailable(cef)
 ```
 
 ## Features
-- Provides a reproducible and automated packaging of CEF for Linux
+- Provides a reproducible and automated packaging of CEF for Linux and macOS
 - Integrates with CMake and CPM.cmake for easy consumption
 - Includes a minimal sanity test to verify correct integration
 - Continuous Integration (CI) with GitHub Actions for reliability
 
+## Platform Support
+
+This CEF packaging supports the following platforms:
+- **Linux (x64)**: Uses `cef_binary_*_linux64.tar.bz2` distribution
+- **macOS (x64)**: Uses `cef_binary_*_macosx64.tar.bz2` distribution
+
+The platform is automatically detected during the CMake configuration phase, and the appropriate CEF binary distribution is downloaded and configured.
+
 ## Prerequisites
-- Linux-based operating system
-- C++ compiler (GCC 11 or newer recommended)
+- Linux-based operating system or macOS
+- C++ compiler (GCC 11 or newer recommended on Linux, Xcode on macOS)
 - [CMake](https://cmake.org/) version 3.27.9 or later
 - [Ninja](https://ninja-build.org/) build system
 - Git
@@ -72,11 +80,11 @@ FetchContent_MakeAvailable(cef)
 
 ## Continuous Integration
 
-The project employs GitHub Actions for CI. The workflow is defined in `.github/workflows/linux.yml` and is triggered on every push and pull request. The CI pipeline performs the following steps:
-- Installs required dependencies (`cmake`, `ninja-build`)
-- Configures the project using CMake
-- Builds the `cef_sanity_test` target
-- Executes the test to ensure correct functionality
+The project employs GitHub Actions for CI on both Linux and macOS. The workflow is defined in `.github/workflows/ci.yml` and is triggered on every push and pull request. The CI pipeline performs the following steps:
+- Install required dependencies (`ninja-build` on Linux; `ninja` via Homebrew on macOS)
+- Configure the project using CMake
+- Build the `cef_sanity_test` target
+- Execute the test to ensure correct functionality
 
 ## Development Container
 
