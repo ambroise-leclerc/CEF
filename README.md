@@ -56,16 +56,16 @@ This CEF packaging supports the following platforms:
 
 #### Windows
 - Visual Studio 2019 or later (with C++ tools)
-- CMake 3.15 or later
+- CMake 3.27 or later
 - Windows 10 SDK
 
 #### Linux
 - GCC or Clang compiler
-- CMake 3.15 or later
+- CMake 3.27 or later
 
 #### macOS
 - Xcode or Command Line Tools
-- CMake 3.15 or later
+- CMake 3.27 or later
 
 The platform is automatically detected during the CMake configuration phase, and the appropriate CEF binary distribution is downloaded and configured.
 
@@ -79,11 +79,7 @@ This version is chosen for its stability and cross-platform availability. If you
   - **Linux**: GCC 11 or newer recommended
   - **macOS**: Xcode or Command Line Tools
   - **Windows**: Visual Studio 2019 or later
-- [CMake](https://cmake.org/) version 3.15 or later (workflows use 3.27.9)
-- Build system: Platform defaults (no additional build tools required)
-  - **Linux**: Unix Makefiles (built-in)
-  - **macOS**: Unix Makefiles (built-in)
-  - **Windows**: Visual Studio MSBuild (built-in)
+- [CMake](https://cmake.org/) version 3.27 or later (workflows use 3.27.9)
 - Git
 
 ## Building and Testing (for maintainers)
@@ -154,7 +150,6 @@ This project is distributed under the terms of the CeCILL License. See `CECILL-L
 
 - [Chromium Embedded Framework (CEF)](https://bitbucket.org/chromiumembedded/cef)
 - [Kitware CMake](https://cmake.org/)
-- [Ninja Build](https://ninja-build.org/)
 - [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake)
 
 ---
