@@ -46,8 +46,57 @@ endif()
 # Only build the minimal sanity test, do not build CEF sample apps or tests
 # Do NOT remove CMakeLists.txt or tests from the CEF source tree, as this breaks the build system
 
+# Debug: Show CEF source directory contents
+message(STATUS "CEF source directory: ${cef_SOURCE_DIR}")
+if(APPLE)
+    message(STATUS "Contents of CEF source directory:")
+    file(GLOB CEF_ROOT_FILES "${cef_SOURCE_DIR}/*")
+    foreach(file ${CEF_ROOT_FILES})
+        message(STATUS "  ${file}")
+    endforeach()
+    if(EXISTS "${cef_SOURCE_DIR}/Release")
+        message(STATUS "Contents of Release directory:")
+        file(GLOB CEF_RELEASE_FILES "${cef_SOURCE_DIR}/Release/*")
+        foreach(file ${CEF_RELEASE_FILES})
+            message(STATUS "  ${file}")
+        endforeach()
+    endif()
+endif()
+
 set(CEF_INCLUDE_DIR "${cef_SOURCE_DIR}/include" CACHE STRING "Path to CEF include directory")
-set(CEF_LIBRARY_DIR "${cef_SOURCE_DIR}/Release" CACHE STRING "Path to CEF library directory")
+
+# Find and set the CEF library location with proper detection
+if(APPLE)
+    # On macOS, check multiple possible locations for libcef.dylib
+    set(CEF_DYLIB_CANDIDATES 
+        "${cef_SOURCE_DIR}/Debug/libcef.dylib"
+        "${cef_SOURCE_DIR}/Release/libcef.dylib"
+        "${cef_SOURCE_DIR}/libcef.dylib"
+    )
+    
+    set(CEF_DYLIB_PATH "")
+    foreach(candidate ${CEF_DYLIB_CANDIDATES})
+        if(EXISTS "${candidate}")
+            set(CEF_DYLIB_PATH "${candidate}")
+            message(STATUS "Found libcef.dylib at: ${CEF_DYLIB_PATH}")
+            break()
+        endif()
+    endforeach()
+    
+    if(NOT CEF_DYLIB_PATH)
+        message(FATAL_ERROR "Could not find libcef.dylib in any expected location")
+    endif()
+    
+    # Extract the directory for CEF_LIBRARY_DIR
+    get_filename_component(CEF_LIBRARY_DIR "${CEF_DYLIB_PATH}" DIRECTORY CACHE)
+else()
+    # On Linux, libraries are typically in Release directory
+    set(CEF_LIBRARY_DIR "${cef_SOURCE_DIR}/Release" CACHE STRING "Path to CEF library directory")
+    set(CEF_SO_PATH "${CEF_LIBRARY_DIR}/libcef.so")
+    if(NOT EXISTS "${CEF_SO_PATH}")
+        message(FATAL_ERROR "Could not find libcef.so at ${CEF_SO_PATH}")
+    endif()
+endif()
 
 # Create the main CEF interface library
 add_library(cef INTERFACE)
@@ -56,9 +105,9 @@ add_library(cef INTERFACE)
 if(NOT TARGET libcef)
     add_library(libcef SHARED IMPORTED)
     if(APPLE)
-        set_target_properties(libcef PROPERTIES IMPORTED_LOCATION ${CEF_LIBRARY_DIR}/libcef.dylib)
+        set_target_properties(libcef PROPERTIES IMPORTED_LOCATION "${CEF_DYLIB_PATH}")
     else()
-        set_target_properties(libcef PROPERTIES IMPORTED_LOCATION ${CEF_LIBRARY_DIR}/libcef.${CEF_LIBRARY_EXTENSION})
+        set_target_properties(libcef PROPERTIES IMPORTED_LOCATION "${CEF_SO_PATH}")
     endif()
 endif()
 
