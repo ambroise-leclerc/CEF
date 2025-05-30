@@ -100,14 +100,37 @@ if(APPLE)
     get_filename_component(CEF_LIBRARY_DIR "${CEF_FRAMEWORK_PATH}" DIRECTORY CACHE)
 elseif(WIN32)
     # On Windows, libraries are typically in Release or Debug directory
-    set(CEF_LIBRARY_DIR "${cef_SOURCE_DIR}/Release" CACHE STRING "Path to CEF library directory")
-    set(CEF_LIB_PATH "${CEF_LIBRARY_DIR}/libcef.lib")
-    set(CEF_DLL_PATH "${CEF_LIBRARY_DIR}/libcef.dll")
-    if(NOT EXISTS "${CEF_LIB_PATH}")
-        message(FATAL_ERROR "Could not find libcef.lib at ${CEF_LIB_PATH}")
-    endif()
-    if(NOT EXISTS "${CEF_DLL_PATH}")
-        message(FATAL_ERROR "Could not find libcef.dll at ${CEF_DLL_PATH}")
+    # Debug: Show CEF source directory contents for Windows
+    message(STATUS "CEF source directory: ${cef_SOURCE_DIR}")
+    file(GLOB CEF_ROOT_FILES "${cef_SOURCE_DIR}/*")
+    message(STATUS "Contents of CEF source directory:")
+    foreach(file ${CEF_ROOT_FILES})
+        message(STATUS "  ${file}")
+    endforeach()
+    
+    # Try to find the correct library directory
+    set(CEF_LIBRARY_CANDIDATES 
+        "${cef_SOURCE_DIR}/Release"
+        "${cef_SOURCE_DIR}/Debug"
+        "${cef_SOURCE_DIR}"
+    )
+    
+    set(CEF_LIBRARY_DIR "")
+    set(CEF_LIB_PATH "")
+    set(CEF_DLL_PATH "")
+    
+    foreach(candidate ${CEF_LIBRARY_CANDIDATES})
+        if(EXISTS "${candidate}/libcef.lib" AND EXISTS "${candidate}/libcef.dll")
+            set(CEF_LIBRARY_DIR "${candidate}" CACHE STRING "Path to CEF library directory")
+            set(CEF_LIB_PATH "${CEF_LIBRARY_DIR}/libcef.lib")
+            set(CEF_DLL_PATH "${CEF_LIBRARY_DIR}/libcef.dll")
+            message(STATUS "Found CEF libraries at: ${CEF_LIBRARY_DIR}")
+            break()
+        endif()
+    endforeach()
+    
+    if(NOT CEF_LIBRARY_DIR)
+        message(FATAL_ERROR "Could not find libcef.lib and libcef.dll in any expected location")
     endif()
 else()
     # On Linux, libraries are typically in Release directory
