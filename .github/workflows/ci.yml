@@ -2,9 +2,9 @@ name: CEF CI
 
 on:
   push:
-    branches: [ '**' ]
+    branches: ['**']
   pull_request:
-    branches: [ '**' ]
+    branches: ['**']
 
 jobs:
   build-and-test:
@@ -13,8 +13,13 @@ jobs:
         include:
           - os: ubuntu-latest
             install_deps: sudo apt-get update && sudo apt-get install -y ninja-build
+            generator: Ninja
           - os: macos-latest
             install_deps: brew install ninja
+            generator: Ninja
+          - os: windows-latest
+            install_deps: choco install ninja
+            generator: "Visual Studio 17 2022"
     
     runs-on: ${{ matrix.os }}
     
@@ -23,6 +28,7 @@ jobs:
       
       - name: Install dependencies
         run: ${{ matrix.install_deps }}
+        shell: bash
       
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1
@@ -30,10 +36,19 @@ jobs:
           cmake-version: '3.27.9'
       
       - name: Configure
-        run: cmake -B build -S .
+        run: cmake -B build -S . -G "${{ matrix.generator }}"
+        shell: bash
       
       - name: Build
         run: cmake --build build --config Release --target cef_sanity_test
+        shell: bash
       
-      - name: Run CEF sanity test
+      - name: Run CEF sanity test (Unix)
+        if: runner.os != 'Windows'
         run: ./build/test/cef_sanity_test
+        shell: bash
+      
+      - name: Run CEF sanity test (Windows)
+        if: runner.os == 'Windows'
+        run: ./build/test/Release/cef_sanity_test.exe
+        shell: bash

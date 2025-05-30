@@ -4,7 +4,7 @@
 
 ## Overview
 
-This repository provides a packaging solution for the Chromium Embedded Framework (CEF) on Linux and macOS, enabling seamless integration into C++ projects. The packaging is designed for use with [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake), allowing other projects to easily fetch and build CEF as a dependency.
+This repository provides a packaging solution for the Chromium Embedded Framework (CEF) on Linux, macOS, and Windows, enabling seamless integration into C++ projects. The packaging is designed for use with [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake), allowing other projects to easily fetch and build CEF as a dependency.
 
 ## Usage
 
@@ -38,16 +38,34 @@ FetchContent_MakeAvailable(cef)
 ```
 
 ## Features
-- Provides a reproducible and automated packaging of CEF for Linux and macOS
+- Provides a reproducible and automated packaging of CEF for Linux, macOS, and Windows
 - Integrates with CMake and CPM.cmake for easy consumption
 - Includes a minimal sanity test to verify correct integration
-- Continuous Integration (CI) with GitHub Actions for reliability
+- Continuous Integration (CI) with GitHub Actions for reliability across all platforms
 
 ## Platform Support
 
 This CEF packaging supports the following platforms:
 - **Linux (x64)**: Uses `cef_binary_*_linux64.tar.bz2` distribution
 - **macOS (x64)**: Uses `cef_binary_*_macosx64.tar.bz2` distribution
+- **Windows (x64)**: Uses `cef_binary_*_windows64.tar.bz2` distribution
+
+### Build Requirements
+
+#### Windows
+- Visual Studio 2019 or later (with C++ tools)
+- CMake 3.15 or later
+- Windows 10 SDK
+
+#### Linux
+- GCC or Clang compiler
+- CMake 3.15 or later
+- ninja-build
+
+#### macOS
+- Xcode or Command Line Tools
+- CMake 3.15 or later
+- ninja (via Homebrew)
 
 The platform is automatically detected during the CMake configuration phase, and the appropriate CEF binary distribution is downloaded and configured.
 
