@@ -18,7 +18,7 @@ jobs:
         run: |
           echo "🪟 Building CEF for Windows"
           echo "Generator: Visual Studio 17 2022"
-        shell: bash
+        shell: cmd
       
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1
