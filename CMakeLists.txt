@@ -32,6 +32,8 @@ else()
     set(CEF_DLL_WRAPPER_LIB "")
 endif()
 
+add_subdirectory(test)
+
 # The cef_sanity_test target definition has been moved to test/CMakeLists.txt.
 
 enable_testing()
