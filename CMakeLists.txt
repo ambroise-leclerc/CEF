@@ -67,28 +67,28 @@ set(CEF_INCLUDE_DIR "${cef_SOURCE_DIR}/include" CACHE STRING "Path to CEF includ
 
 # Find and set the CEF library location with proper detection
 if(APPLE)
-    # On macOS, check multiple possible locations for libcef.dylib
-    set(CEF_DYLIB_CANDIDATES 
-        "${cef_SOURCE_DIR}/Debug/libcef.dylib"
-        "${cef_SOURCE_DIR}/Release/libcef.dylib"
-        "${cef_SOURCE_DIR}/libcef.dylib"
+    # On macOS, CEF is distributed as a framework, not individual dylib files
+    set(CEF_FRAMEWORK_CANDIDATES 
+        "${cef_SOURCE_DIR}/Release/Chromium Embedded Framework.framework"
+        "${cef_SOURCE_DIR}/Debug/Chromium Embedded Framework.framework"
+        "${cef_SOURCE_DIR}/Chromium Embedded Framework.framework"
     )
     
-    set(CEF_DYLIB_PATH "")
-    foreach(candidate ${CEF_DYLIB_CANDIDATES})
+    set(CEF_FRAMEWORK_PATH "")
+    foreach(candidate ${CEF_FRAMEWORK_CANDIDATES})
         if(EXISTS "${candidate}")
-            set(CEF_DYLIB_PATH "${candidate}")
-            message(STATUS "Found libcef.dylib at: ${CEF_DYLIB_PATH}")
+            set(CEF_FRAMEWORK_PATH "${candidate}")
+            message(STATUS "Found CEF framework at: ${CEF_FRAMEWORK_PATH}")
             break()
         endif()
     endforeach()
     
-    if(NOT CEF_DYLIB_PATH)
-        message(FATAL_ERROR "Could not find libcef.dylib in any expected location")
+    if(NOT CEF_FRAMEWORK_PATH)
+        message(FATAL_ERROR "Could not find Chromium Embedded Framework.framework in any expected location")
     endif()
     
     # Extract the directory for CEF_LIBRARY_DIR
-    get_filename_component(CEF_LIBRARY_DIR "${CEF_DYLIB_PATH}" DIRECTORY CACHE)
+    get_filename_component(CEF_LIBRARY_DIR "${CEF_FRAMEWORK_PATH}" DIRECTORY CACHE)
 else()
     # On Linux, libraries are typically in Release directory
     set(CEF_LIBRARY_DIR "${cef_SOURCE_DIR}/Release" CACHE STRING "Path to CEF library directory")
@@ -103,10 +103,13 @@ add_library(cef INTERFACE)
 
 # Define the libcef shared library target if not already defined
 if(NOT TARGET libcef)
-    add_library(libcef SHARED IMPORTED)
     if(APPLE)
-        set_target_properties(libcef PROPERTIES IMPORTED_LOCATION "${CEF_DYLIB_PATH}")
+        # On macOS, link against the CEF framework
+        add_library(libcef INTERFACE)
+        target_link_libraries(libcef INTERFACE "${CEF_FRAMEWORK_PATH}/Chromium Embedded Framework")
     else()
+        # On Linux, use the shared library
+        add_library(libcef SHARED IMPORTED)
         set_target_properties(libcef PROPERTIES IMPORTED_LOCATION "${CEF_SO_PATH}")
     endif()
 endif()
