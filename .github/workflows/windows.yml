@@ -1,0 +1,51 @@
+name: Windows Build
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  windows-build:
+    name: Windows Build
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Display build information
+        run: |
+          echo "🪟 Building CEF for Windows"
+          echo "Generator: Visual Studio 17 2022"
+        shell: bash
+      
+      - name: Install dependencies
+        run: choco install ninja
+        shell: bash
+      
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v1
+        with:
+          cmake-version: '3.27.9'
+      
+      - name: Configure
+        run: cmake -B build -S . -G "Visual Studio 17 2022"
+        shell: bash
+      
+      - name: Build
+        run: cmake --build build --config Release --target cef_sanity_test
+        shell: bash
+      
+      - name: Run CEF sanity test
+        run: ./build/test/Release/cef_sanity_test.exe
+        shell: bash
+      
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cef-build-windows-${{ github.sha }}
+          path: |
+            build/test/**/cef_sanity_test*
+          retention-days: 7
