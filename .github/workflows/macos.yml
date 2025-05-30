@@ -16,11 +16,8 @@ jobs:
       
       - name: Display build information
         run: |
-          echo "üçé Building CEF for macOS"
-          echo "Generator: Ninja"
-      
-      - name: Install dependencies
-        run: brew install ninja
+          echo "ÌΩé Building CEF for macOS"
+          echo "Generator: Unix Makefiles (default)"
       
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1
@@ -28,7 +25,7 @@ jobs:
           cmake-version: '3.27.9'
       
       - name: Configure
-        run: cmake -B build -S . -G "Ninja"
+        run: cmake -B build -S .
       
       - name: Build
         run: cmake --build build --config Release --target cef_sanity_test

@@ -20,10 +20,6 @@ jobs:
           echo "Generator: Visual Studio 17 2022"
         shell: bash
       
-      - name: Install dependencies
-        run: choco install ninja
-        shell: bash
-      
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1
         with:

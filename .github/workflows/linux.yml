@@ -16,11 +16,8 @@ jobs:
       
       - name: Display build information
         run: |
-          echo "üêß Building CEF for Linux"
-          echo "Generator: Ninja"
-      
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y ninja-build
+          echo "Ì∞ß Building CEF for Linux"
+          echo "Generator: Unix Makefiles (default)"
       
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1
@@ -28,7 +25,7 @@ jobs:
           cmake-version: '3.27.9'
       
       - name: Configure
-        run: cmake -B build -S . -G "Ninja"
+        run: cmake -B build -S .
       
       - name: Build
         run: cmake --build build --config Release --target cef_sanity_test

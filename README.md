@@ -62,12 +62,10 @@ This CEF packaging supports the following platforms:
 #### Linux
 - GCC or Clang compiler
 - CMake 3.15 or later
-- ninja-build
 
 #### macOS
 - Xcode or Command Line Tools
 - CMake 3.15 or later
-- ninja (via Homebrew)
 
 The platform is automatically detected during the CMake configuration phase, and the appropriate CEF binary distribution is downloaded and configured.
 
@@ -82,9 +80,10 @@ This version is chosen for its stability and cross-platform availability. If you
   - **macOS**: Xcode or Command Line Tools
   - **Windows**: Visual Studio 2019 or later
 - [CMake](https://cmake.org/) version 3.15 or later (workflows use 3.27.9)
-- Build system:
-  - **Linux/macOS**: [Ninja](https://ninja-build.org/) build system
-  - **Windows**: Visual Studio (from workflow configuration)
+- Build system: Platform defaults (no additional build tools required)
+  - **Linux**: Unix Makefiles (built-in)
+  - **macOS**: Unix Makefiles (built-in)
+  - **Windows**: Visual Studio MSBuild (built-in)
 - Git
 
 ## Building and Testing (for maintainers)
@@ -115,9 +114,9 @@ This version is chosen for its stability and cross-platform availability. If you
 ## Continuous Integration
 
 The project employs GitHub Actions for CI on Linux, macOS, and Windows. The workflows are defined in `.github/workflows/` with separate files for each platform:
-- `linux.yml` - Ubuntu with Ninja build system
-- `macos.yml` - macOS with Ninja build system  
-- `windows.yml` - Windows with Visual Studio 2022
+- `linux.yml` - Ubuntu with Unix Makefiles (default)
+- `macos.yml` - macOS with Unix Makefiles (default)
+- `windows.yml` - Windows with Visual Studio 2022 (MSBuild)
 
 Each workflow is triggered on every push and pull request and performs the following steps:
 - Install required dependencies
