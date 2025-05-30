@@ -121,12 +121,11 @@ else()
     set(CEF_DLL_WRAPPER_LIB "")
 endif()
 
+# Enable testing before adding test subdirectory
+enable_testing()
 add_subdirectory(test)
 
 # The cef_sanity_test target definition has been moved to test/CMakeLists.txt.
-
-enable_testing()
-# The cef_sanity_test test command has been moved to test/CMakeLists.txt.
 
 # Install config for CPM consumers
 include(CMakePackageConfigHelpers)
