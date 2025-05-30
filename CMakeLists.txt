@@ -104,7 +104,10 @@ add_library(cef INTERFACE)
 if(APPLE)
     # On macOS, link directly to the framework and include headers
     target_link_libraries(cef INTERFACE "${CEF_FRAMEWORK_PATH}/Chromium Embedded Framework")
-    target_include_directories(cef INTERFACE "${cef_SOURCE_DIR}")
+    target_include_directories(cef INTERFACE 
+        $<BUILD_INTERFACE:${cef_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include>
+    )
     
     # Add required macOS system frameworks
     find_library(COCOA_FRAMEWORK Cocoa REQUIRED)
@@ -113,7 +116,10 @@ if(APPLE)
 else()
     # On Linux, link directly to the shared library
     target_link_libraries(cef INTERFACE "${CEF_SO_PATH}")
-    target_include_directories(cef INTERFACE "${cef_SOURCE_DIR}")
+    target_include_directories(cef INTERFACE 
+        $<BUILD_INTERFACE:${cef_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include>
+    )
 endif()
 
 # Create a libcef target for backward compatibility but don't export it
@@ -152,6 +158,11 @@ configure_file(
 # Only export the main cef interface target
 # This avoids issues with exporting target dependencies
 install(TARGETS cef EXPORT CEFTargets)
+
+# Install CEF headers for the exported target
+install(DIRECTORY "${cef_SOURCE_DIR}/include/" 
+        DESTINATION include 
+        FILES_MATCHING PATTERN "*.h")
 
 install(EXPORT CEFTargets FILE CEFTargets.cmake NAMESPACE CEF:: DESTINATION lib/cmake/CEF)
 install(FILES 
