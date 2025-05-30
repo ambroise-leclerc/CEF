@@ -12,6 +12,14 @@ if(APPLE)
     # CEF typically provides universal binaries or Intel binaries that work on both
     set(CEF_PLATFORM "macosx64")
     set(CEF_LIBRARY_EXTENSION "dylib")
+elseif(WIN32)
+    # For Windows, use windows64 platform
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(CEF_PLATFORM "windows64")
+    else()
+        set(CEF_PLATFORM "windows32")
+    endif()
+    set(CEF_LIBRARY_EXTENSION "dll")
 elseif(UNIX)
     set(CEF_PLATFORM "linux64")
     set(CEF_LIBRARY_EXTENSION "so")
@@ -88,9 +96,41 @@ if(APPLE)
     if(NOT CEF_FRAMEWORK_PATH)
         message(FATAL_ERROR "Could not find Chromium Embedded Framework.framework in any expected location")
     endif()
-    
-    # Extract the directory for CEF_LIBRARY_DIR
+      # Extract the directory for CEF_LIBRARY_DIR
     get_filename_component(CEF_LIBRARY_DIR "${CEF_FRAMEWORK_PATH}" DIRECTORY CACHE)
+elseif(WIN32)
+    # On Windows, libraries are typically in Release or Debug directory
+    # Try to find the correct library directory
+    set(CEF_LIBRARY_CANDIDATES 
+        "${cef_SOURCE_DIR}/Release"
+        "${cef_SOURCE_DIR}/Debug"
+        "${cef_SOURCE_DIR}"
+    )
+    
+    set(CEF_LIBRARY_DIR "")
+    set(CEF_LIB_PATH "")
+    set(CEF_DLL_PATH "")
+    
+    foreach(candidate ${CEF_LIBRARY_CANDIDATES})
+        if(EXISTS "${candidate}/libcef.lib" AND EXISTS "${candidate}/libcef.dll")
+            set(CEF_LIBRARY_DIR "${candidate}" CACHE STRING "Path to CEF library directory")
+            set(CEF_LIB_PATH "${CEF_LIBRARY_DIR}/libcef.lib")
+            set(CEF_DLL_PATH "${CEF_LIBRARY_DIR}/libcef.dll")
+            message(STATUS "Found CEF libraries at: ${CEF_LIBRARY_DIR}")
+            break()
+        endif()
+    endforeach()
+    
+    if(NOT CEF_LIBRARY_DIR)
+        # If we still can't find libraries, show debug info and fail
+        message(STATUS "CEF source directory: ${cef_SOURCE_DIR}")
+        file(GLOB CEF_ROOT_FILES "${cef_SOURCE_DIR}/*")
+        message(STATUS "Contents of CEF source directory:")
+        foreach(file ${CEF_ROOT_FILES})
+            message(STATUS "  ${file}")
+        endforeach()
+        message(FATAL_ERROR "Could not find libcef.lib and libcef.dll in any expected location")
+    endif()
 else()
     # On Linux, libraries are typically in Release directory
     set(CEF_LIBRARY_DIR "${cef_SOURCE_DIR}/Release" CACHE STRING "Path to CEF library directory")
@@ -115,6 +155,35 @@ if(APPLE)
     find_library(COCOA_FRAMEWORK Cocoa REQUIRED)
     find_library(APPKIT_FRAMEWORK AppKit REQUIRED)
     target_link_libraries(cef INTERFACE ${COCOA_FRAMEWORK} ${APPKIT_FRAMEWORK})
+elseif(WIN32)
+    # On Windows, link to the import library
+    target_link_libraries(cef INTERFACE "${CEF_LIB_PATH}")
+    target_include_directories(cef INTERFACE 
+        $<BUILD_INTERFACE:${cef_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include>
+    )
+    
+    # Add required Windows system libraries
+    target_link_libraries(cef INTERFACE 
+        comctl32.lib 
+        rpcrt4.lib 
+        shlwapi.lib 
+        ws2_32.lib
+        winmm.lib
+        winspool.lib
+        psapi.lib
+    )
+    
+    # Define Windows-specific preprocessor definitions
+    target_compile_definitions(cef INTERFACE 
+        WIN32 
+        _WIN32 
+        _WINDOWS 
+        UNICODE 
+        _UNICODE
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
+    )
 else()
     # On Linux, link directly to the shared library
     target_link_libraries(cef INTERFACE "${CEF_SO_PATH}")
@@ -131,7 +200,11 @@ target_link_libraries(libcef INTERFACE cef)
 # Build the CEF dll wrapper if it exists (for static linking)
 if(EXISTS "${cef_BINARY_DIR}/libcef_dll_wrapper/CMakeLists.txt")
     add_subdirectory(${cef_BINARY_DIR}/libcef_dll_wrapper libcef_dll_wrapper_build EXCLUDE_FROM_ALL)
-    set(CEF_DLL_WRAPPER_LIB ${cef_BINARY_DIR}/libcef_dll_wrapper/libcef_dll_wrapper.a)
+    if(WIN32)
+        set(CEF_DLL_WRAPPER_LIB ${cef_BINARY_DIR}/libcef_dll_wrapper/libcef_dll_wrapper.lib)
+    else()
+        set(CEF_DLL_WRAPPER_LIB ${cef_BINARY_DIR}/libcef_dll_wrapper/libcef_dll_wrapper.a)
+    endif()
 else()
     set(CEF_DLL_WRAPPER_LIB "")
 endif()

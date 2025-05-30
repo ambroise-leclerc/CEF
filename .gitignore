@@ -1,0 +1,97 @@
+# Build directories
+build/
+build_test/
+build_*/
+out/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# Visual Studio
+.vs/
+*.vcxproj.user
+*.vcxproj.filters
+*.sln.docstates
+*.suo
+*.user
+*.aps
+*.pch
+*.vspscc
+*_i.c
+*_p.c
+*.ncb
+*.tlb
+*.tlh
+*.bak
+*.cache
+*.ilk
+*.log
+*.lib
+*.sbr
+*.pdb
+*.idb
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+
+# Object files
+*.o
+*.obj
+*.ko
+*.elf
+
+# Libraries
+*.a
+*.la
+*.lo
+
+# Shared objects
+*.so.*
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Package files
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# CEF specific
+*.pak
+*.dat
+cef_sandbox.lib
+libcef.dll.lib

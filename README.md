@@ -1,10 +1,12 @@
 # Chromium Embedded Framework (CEF) Packaging
 
-[![CI Status](https://github.com/<your-org-or-username>/CEF/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-org-or-username>/CEF/actions/workflows/ci.yml)
+[![Linux Build](https://github.com/ambroise-leclerc/CEF/actions/workflows/linux.yml/badge.svg)](https://github.com/ambroise-leclerc/CEF/actions/workflows/linux.yml)
+[![macOS Build](https://github.com/ambroise-leclerc/CEF/actions/workflows/macos.yml/badge.svg)](https://github.com/ambroise-leclerc/CEF/actions/workflows/macos.yml)
+[![Windows Build](https://github.com/ambroise-leclerc/CEF/actions/workflows/windows.yml/badge.svg)](https://github.com/ambroise-leclerc/CEF/actions/workflows/windows.yml)
 
 ## Overview
 
-This repository provides a packaging solution for the Chromium Embedded Framework (CEF) on Linux and macOS, enabling seamless integration into C++ projects. The packaging is designed for use with [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake), allowing other projects to easily fetch and build CEF as a dependency.
+This repository provides a packaging solution for the Chromium Embedded Framework (CEF) on Linux, macOS, and Windows, enabling seamless integration into C++ projects. The packaging is designed for use with [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake), allowing other projects to easily fetch and build CEF as a dependency.
 
 ## Usage
 
@@ -38,16 +40,32 @@ FetchContent_MakeAvailable(cef)
 ```
 
 ## Features
-- Provides a reproducible and automated packaging of CEF for Linux and macOS
+- Provides a reproducible and automated packaging of CEF for Linux, macOS, and Windows
 - Integrates with CMake and CPM.cmake for easy consumption
 - Includes a minimal sanity test to verify correct integration
-- Continuous Integration (CI) with GitHub Actions for reliability
+- Continuous Integration (CI) with GitHub Actions for reliability across all platforms
 
 ## Platform Support
 
 This CEF packaging supports the following platforms:
 - **Linux (x64)**: Uses `cef_binary_*_linux64.tar.bz2` distribution
 - **macOS (x64)**: Uses `cef_binary_*_macosx64.tar.bz2` distribution
+- **Windows (x64)**: Uses `cef_binary_*_windows64.tar.bz2` distribution
+
+### Build Requirements
+
+#### Windows
+- Visual Studio 2019 or later (with C++ tools)
+- CMake 3.27 or later
+- Windows 10 SDK
+
+#### Linux
+- GCC or Clang compiler
+- CMake 3.27 or later
+
+#### macOS
+- Xcode or Command Line Tools
+- CMake 3.27 or later
 
 The platform is automatically detected during the CMake configuration phase, and the appropriate CEF binary distribution is downloaded and configured.
 
@@ -56,17 +74,19 @@ The platform is automatically detected during the CMake configuration phase, and
 This version is chosen for its stability and cross-platform availability. If you need a different CEF version, you can modify the `CEF_VERSION` variable in the main `CMakeLists.txt` file, but ensure that the version you choose has builds available for all platforms you intend to support.
 
 ## Prerequisites
-- Linux-based operating system or macOS
-- C++ compiler (GCC 11 or newer recommended on Linux, Xcode on macOS)
-- [CMake](https://cmake.org/) version 3.27.9 or later
-- [Ninja](https://ninja-build.org/) build system
+- Operating system: Linux, macOS, or Windows (x64)
+- C++ compiler:
+  - **Linux**: GCC 11 or newer recommended
+  - **macOS**: Xcode or Command Line Tools
+  - **Windows**: Visual Studio 2019 or later
+- [CMake](https://cmake.org/) version 3.27 or later (workflows use 3.27.9)
 - Git
 
 ## Building and Testing (for maintainers)
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/<your-org-or-username>/CEF.git
+   git clone https://github.com/ambroise-leclerc/CEF.git
    cd CEF
    ```
 2. **Configure the project:**
@@ -78,17 +98,28 @@ This version is chosen for its stability and cross-platform availability. If you
    cmake --build build --config Release --target cef_sanity_test
    ```
 4. **Run the CEF sanity test:**
-   ```bash
-   ./build/test/cef_sanity_test
-   ```
+   - **Linux/macOS:**
+     ```bash
+     ./build/test/cef_sanity_test
+     ```
+   - **Windows:**
+     ```bash
+     ./build/test/Release/cef_sanity_test.exe
+     ```
 
 ## Continuous Integration
 
-The project employs GitHub Actions for CI on both Linux and macOS. The workflow is defined in `.github/workflows/ci.yml` and is triggered on every push and pull request. The CI pipeline performs the following steps:
-- Install required dependencies (`ninja-build` on Linux; `ninja` via Homebrew on macOS)
+The project employs GitHub Actions for CI on Linux, macOS, and Windows. The workflows are defined in `.github/workflows/` with separate files for each platform:
+- `linux.yml` - Ubuntu with Unix Makefiles (default)
+- `macos.yml` - macOS with Unix Makefiles (default)
+- `windows.yml` - Windows with Visual Studio 2022 (MSBuild)
+
+Each workflow is triggered on every push and pull request and performs the following steps:
+- Install required dependencies
 - Configure the project using CMake
 - Build the `cef_sanity_test` target
 - Execute the test to ensure correct functionality
+- Upload build artifacts
 
 ## Development Container
 
@@ -108,7 +139,7 @@ To resolve this:
 
 ### Platform Detection Issues
 The build system automatically detects your platform. If detection fails:
-- Ensure you're running on a supported platform (Linux x64 or macOS x64)
+- Ensure you're running on a supported platform (Linux x64, macOS x64, or Windows x64)
 - Check the CMake output for platform detection messages
 
 ## Licensing
@@ -119,7 +150,6 @@ This project is distributed under the terms of the CeCILL License. See `CECILL-L
 
 - [Chromium Embedded Framework (CEF)](https://bitbucket.org/chromiumembedded/cef)
 - [Kitware CMake](https://cmake.org/)
-- [Ninja Build](https://ninja-build.org/)
 - [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake)
 
 ---
