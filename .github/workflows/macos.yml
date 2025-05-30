@@ -16,7 +16,7 @@ jobs:
       
       - name: Display build information
         run: |
-          echo "ÌΩé Building CEF for macOS"
+          echo "üñ•Ô∏è Building CEF for macOS"
           echo "Generator: Unix Makefiles (default)"
       
       - name: Set up CMake

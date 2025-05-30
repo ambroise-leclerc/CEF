@@ -16,7 +16,7 @@ jobs:
       
       - name: Display build information
         run: |
-          echo "��� Building CEF for Linux"
+          echo "🐧 Building CEF for Linux"
           echo "Generator: Unix Makefiles (default)"
       
       - name: Set up CMake
