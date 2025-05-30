@@ -15,8 +15,6 @@ jobs:
             install_deps: sudo apt-get update && sudo apt-get install -y ninja-build
           - os: macos-latest
             install_deps: brew install ninja
-          - os: macos-13  # Intel macOS for compatibility testing
-            install_deps: brew install ninja
     
     runs-on: ${{ matrix.os }}
     
