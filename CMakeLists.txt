@@ -100,7 +100,7 @@ if(APPLE)
     get_filename_component(CEF_LIBRARY_DIR "${CEF_FRAMEWORK_PATH}" DIRECTORY CACHE)
 elseif(WIN32)
     # On Windows, libraries are typically in Release or Debug directory
-    set(CEF_LIBRARY_DIR "${cef_SOURCE_DIR}/Release" CACHE STRING "Path to CEF library directory")
+    set(CEF_LIBRARY_DIR "${cef_SOURCE_DIR}/${CMAKE_BUILD_TYPE}" CACHE STRING "Path to CEF library directory")
     set(CEF_LIB_PATH "${CEF_LIBRARY_DIR}/libcef.lib")
     set(CEF_DLL_PATH "${CEF_LIBRARY_DIR}/libcef.dll")
     if(NOT EXISTS "${CEF_LIB_PATH}")
