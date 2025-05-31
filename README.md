@@ -236,7 +236,7 @@ Pour utiliser une autre version, modifiez la variable `CEF_VERSION` dans le fich
 - [CMake](https://cmake.org/) 3.27 ou ultérieur (workflows : 3.27.9)
 - Git
 
-## Compilation et tests (mainteneurs)
+## Compilation et tests (pour les mainteneurs)
 
 1. **Cloner le dépôt :**
    ```bash
