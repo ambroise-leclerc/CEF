@@ -4,7 +4,7 @@ project(CEF LANGUAGES CXX)
 include(FetchContent)
 
 # Option to use a locally provided CEF archive
-option(CEF_USE_LOCAL_ARCHIVE "Use a locally provided CEF archive instead of downloading" OFF)
+set(CEF_LOCAL_ARCHIVE_PATH "" CACHE STRING "Path to a locally provided CEF archive (leave empty to download)")
 
 # Option to enable robust download with no timeouts
 option(CEF_ROBUST_DOWNLOAD "Enable robust download strategy with no timeouts" ON)
@@ -110,7 +110,7 @@ elseif(CEF_ROBUST_DOWNLOAD)
         # Verify file exists and has reasonable size
         if(EXISTS "${CEF_ARCHIVE_PATH}")
             file(SIZE "${CEF_ARCHIVE_PATH}" archive_size)
-            if(archive_size LESS ${MIN_CEF_ARCHIVE_SIZE})  # Less than 50MB is suspicious
+            if(${archive_size} LESS ${MIN_CEF_ARCHIVE_SIZE}) 
                 message(FATAL_ERROR "Downloaded CEF archive seems too small (${archive_size} bytes). Download may have failed.")
             endif()
             message(STATUS "CEF archive downloaded successfully (${archive_size} bytes)")
