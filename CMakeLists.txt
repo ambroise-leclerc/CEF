@@ -110,7 +110,7 @@ elseif(CEF_ROBUST_DOWNLOAD)
         # Verify file exists and has reasonable size
         if(EXISTS "${CEF_ARCHIVE_PATH}")
             file(SIZE "${CEF_ARCHIVE_PATH}" archive_size)
-            if(archive_size LESS 50000000)  # Less than 50MB is suspicious
+            if(archive_size LESS ${MIN_CEF_ARCHIVE_SIZE})  # Less than 50MB is suspicious
                 message(FATAL_ERROR "Downloaded CEF archive seems too small (${archive_size} bytes). Download may have failed.")
             endif()
             message(STATUS "CEF archive downloaded successfully (${archive_size} bytes)")
