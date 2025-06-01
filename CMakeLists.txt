@@ -9,6 +9,9 @@ set(CEF_LOCAL_ARCHIVE_PATH "" CACHE STRING "Path to a locally provided CEF archi
 # Option to enable robust download with no timeouts
 option(CEF_ROBUST_DOWNLOAD "Enable robust download strategy with no timeouts" ON)
 
+# Minimum expected CEF archive size in bytes (e.g., 10 MB)
+set(MIN_CEF_ARCHIVE_SIZE 10000000)
+
 # Detect platform and set CEF version and platform accordingly
 # Using CEF version 118 which has good cross-platform support
 set(CEF_VERSION "118.7.1+g99817d2+chromium-118.0.5993.119")
