@@ -16,7 +16,9 @@ This repository provides a packaging solution for the Chromium Embedded Framewor
 To use this CEF package in your own CMake project, simply add the following line to your `CMakeLists.txt`:
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF")
+CPMAddPackage("gh:ambroise-leclerc/CEF@0.1.0")
+# Link CEF to your application target (replace my_app with your target name)
+target_link_libraries(my_app PRIVATE cef)
 ```
 
 This will automatically download, configure, and build CEF as part of your project, ensuring all dependencies and minimal tests are handled as defined in this repository.
@@ -171,6 +173,8 @@ Pour intégrer ce package CEF à votre projet CMake, ajoutez simplement la ligne
 
 ```cmake
 CPMAddPackage("gh:ambroise-leclerc/CEF")
+# Liez CEF à votre cible applicative (remplacez my_app par le nom de votre cible)
+target_link_libraries(my_app PRIVATE cef)
 ```
 
 Cette commande télécharge, configure et compile automatiquement CEF, en assurant la gestion des dépendances et l'exécution des tests de validation.
