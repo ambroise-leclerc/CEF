@@ -45,12 +45,11 @@ if(WIN32)
             )
         endif()
     endforeach()
-    
-    # Copy CEF resources
-    if(EXISTS "${cef_SOURCE_DIR}/Resources")
+      # Copy CEF resources
+    if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
         add_custom_command(TARGET cef_sanity_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${cef_SOURCE_DIR}/Resources"
+            "${cef_binaries_SOURCE_DIR}/Resources"
             $<TARGET_FILE_DIR:cef_sanity_test>/Resources
             COMMENT "Copying CEF Resources"
         )

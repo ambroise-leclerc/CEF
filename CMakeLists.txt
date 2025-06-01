@@ -335,6 +335,20 @@ endif()
 enable_testing()
 add_subdirectory(test)
 
+# Ensure the CEF test is built by default when the parent project has testing enabled
+# This prevents the "test not available without configuration" issue
+if(TARGET cef_sanity_test)
+    # Check if the parent project has testing enabled
+    get_directory_property(PARENT_HAS_TESTING PARENT_DIRECTORY BUILDSYSTEM_TARGETS)
+    if(PARENT_HAS_TESTING OR BUILD_TESTING OR CMAKE_TESTING_ENABLED)
+        # Make the test target build by default (remove EXCLUDE_FROM_ALL)
+        set_target_properties(cef_sanity_test PROPERTIES
+            EXCLUDE_FROM_ALL FALSE
+        )
+        message(STATUS "CEF test will be built by default when parent project builds")
+    endif()
+endif()
+
 # The cef_sanity_test target definition has been moved to test/CMakeLists.txt.
 
 # Install config for CPM consumers
