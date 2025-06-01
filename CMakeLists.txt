@@ -3,6 +3,12 @@ project(CEF LANGUAGES CXX)
 
 include(FetchContent)
 
+# Option to use a locally provided CEF archive
+option(CEF_USE_LOCAL_ARCHIVE "Use a locally provided CEF archive instead of downloading" OFF)
+
+# Option to enable robust download with no timeouts
+option(CEF_ROBUST_DOWNLOAD "Enable robust download strategy with no timeouts" ON)
+
 # Detect platform and set CEF version and platform accordingly
 # Using CEF version 118 which has good cross-platform support
 set(CEF_VERSION "118.7.1+g99817d2+chromium-118.0.5993.119")
@@ -34,17 +40,113 @@ set(CEF_URL "https://cef-builds.spotifycdn.com/${CEF_DIST_NAME}.tar.bz2")
 message(STATUS "CEF Platform: ${CEF_PLATFORM}")
 message(STATUS "CEF URL: ${CEF_URL}")
 
-# If the primary version fails, we could add fallback logic here
-# For now, let's try with the specified version
-FetchContent_Declare(
-    cef
-    URL      ${CEF_URL}
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
+# Choose source based on whether local archive is provided
+if(CEF_USE_LOCAL_ARCHIVE AND EXISTS "${CEF_USE_LOCAL_ARCHIVE}")
+    message(STATUS "Using local CEF archive: ${CEF_USE_LOCAL_ARCHIVE}")
+    FetchContent_Declare(
+        cef
+        URL      ${CEF_USE_LOCAL_ARCHIVE}
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+elseif(CEF_ROBUST_DOWNLOAD)
+    message(STATUS "Using robust download strategy for CEF...")
+    message(STATUS "CEF URL: ${CEF_URL}")
+    message(STATUS "This may take several minutes for large downloads...")
+    
+    # Custom download function with robust handling
+    function(robust_cef_download)
+        set(CEF_DOWNLOAD_DIR "${CMAKE_BINARY_DIR}/_cef_download")
+        set(CEF_ARCHIVE_PATH "${CEF_DOWNLOAD_DIR}/${CEF_DIST_NAME}.tar.bz2")
+        
+        # Create download directory
+        file(MAKE_DIRECTORY "${CEF_DOWNLOAD_DIR}")
+        
+        # Check if already downloaded
+        if(EXISTS "${CEF_ARCHIVE_PATH}")
+            message(STATUS "CEF archive already exists, skipping download")
+        else()
+            message(STATUS "Downloading CEF archive to: ${CEF_ARCHIVE_PATH}")
+            
+            # Use file(DOWNLOAD) with no timeout and progress reporting
+            file(DOWNLOAD 
+                "${CEF_URL}" 
+                "${CEF_ARCHIVE_PATH}"
+                TIMEOUT 0                    # No timeout - let it take as long as needed
+                INACTIVITY_TIMEOUT 0         # No inactivity timeout
+                SHOW_PROGRESS               # Show download progress
+                STATUS download_status
+                LOG download_log
+            )
+            
+            # Check download status
+            list(GET download_status 0 status_code)
+            list(GET download_status 1 status_string)
+            
+            if(NOT status_code EQUAL 0)
+                message(STATUS "Download failed with status: ${status_code} - ${status_string}")
+                message(STATUS "Download log: ${download_log}")
+                
+                # Retry with curl if available
+                find_program(CURL_EXECUTABLE curl)
+                if(CURL_EXECUTABLE)
+                    message(STATUS "Retrying download with curl...")
+                    execute_process(
+                        COMMAND ${CURL_EXECUTABLE} -L --max-time 0 --connect-timeout 30 
+                                -o "${CEF_ARCHIVE_PATH}" "${CEF_URL}"
+                        RESULT_VARIABLE curl_result
+                        OUTPUT_VARIABLE curl_output
+                        ERROR_VARIABLE curl_error
+                    )
+                    
+                    if(NOT curl_result EQUAL 0)
+                        message(FATAL_ERROR "Failed to download CEF with both CMake and curl. Error: ${curl_error}")
+                    endif()
+                else()
+                    message(FATAL_ERROR "Failed to download CEF: ${status_string}")
+                endif()
+            endif()
+        endif()
+        
+        # Verify file exists and has reasonable size
+        if(EXISTS "${CEF_ARCHIVE_PATH}")
+            file(SIZE "${CEF_ARCHIVE_PATH}" archive_size)
+            if(archive_size LESS 50000000)  # Less than 50MB is suspicious
+                message(FATAL_ERROR "Downloaded CEF archive seems too small (${archive_size} bytes). Download may have failed.")
+            endif()
+            message(STATUS "CEF archive downloaded successfully (${archive_size} bytes)")
+        else()
+            message(FATAL_ERROR "CEF archive not found after download attempt")
+        endif()
+        
+        # Set the archive path for FetchContent
+        set(CEF_LOCAL_ARCHIVE "${CEF_ARCHIVE_PATH}" PARENT_SCOPE)
+    endfunction()
+    
+    # Perform robust download
+    robust_cef_download()
+    
+    # Use the downloaded archive
+    FetchContent_Declare(
+        cef
+        URL      ${CEF_LOCAL_ARCHIVE}
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+else()
+    # Standard download with reasonable timeout
+    FetchContent_Declare(
+        cef
+        URL      ${CEF_URL}
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        TIMEOUT  600  # 10 minutes timeout for large file
+    )
+endif()
 
 # Add error handling for FetchContent
 set(FETCHCONTENT_QUIET OFF)
-FetchContent_MakeAvailable(cef)
+FetchContent_GetProperties(cef)
+if(NOT cef_POPULATED)
+    FetchContent_Populate(cef)
+endif()
 
 # Verify that CEF was successfully downloaded and extracted
 if(NOT EXISTS "${cef_SOURCE_DIR}/include/cef_version.h")
@@ -106,14 +208,24 @@ elseif(WIN32)
         "${cef_SOURCE_DIR}/Debug"
         "${cef_SOURCE_DIR}"
     )
-    
-    set(CEF_LIBRARY_DIR "")
+      set(CEF_LIBRARY_DIR "")
     set(CEF_LIB_PATH "")
     set(CEF_DLL_PATH "")
-    
-    foreach(candidate ${CEF_LIBRARY_CANDIDATES})
+      foreach(candidate ${CEF_LIBRARY_CANDIDATES})
+        message(STATUS "Checking candidate: ${candidate}")
+        if(EXISTS "${candidate}/libcef.lib")
+            message(STATUS "  libcef.lib found")
+        else()
+            message(STATUS "  libcef.lib NOT found")
+        endif()
+        if(EXISTS "${candidate}/libcef.dll")
+            message(STATUS "  libcef.dll found")
+        else()
+            message(STATUS "  libcef.dll NOT found")
+        endif()
+        
         if(EXISTS "${candidate}/libcef.lib" AND EXISTS "${candidate}/libcef.dll")
-            set(CEF_LIBRARY_DIR "${candidate}" CACHE STRING "Path to CEF library directory")
+            set(CEF_LIBRARY_DIR "${candidate}")
             set(CEF_LIB_PATH "${CEF_LIBRARY_DIR}/libcef.lib")
             set(CEF_DLL_PATH "${CEF_LIBRARY_DIR}/libcef.dll")
             message(STATUS "Found CEF libraries at: ${CEF_LIBRARY_DIR}")
