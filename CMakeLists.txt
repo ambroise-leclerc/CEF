@@ -127,17 +127,16 @@ elseif(CEF_ROBUST_DOWNLOAD)
     
     # Perform robust download
     robust_cef_download()
-    
-    # Use the downloaded archive
+      # Use the downloaded archive
     FetchContent_Declare(
-        cef
+        cef_binaries
         URL      ${CEF_LOCAL_ARCHIVE}
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
 else()
     # Standard download with reasonable timeout
     FetchContent_Declare(
-        cef
+        cef_binaries
         URL      ${CEF_URL}
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
         TIMEOUT  600  # 10 minutes timeout for large file
@@ -146,13 +145,21 @@ endif()
 
 # Add error handling for FetchContent
 set(FETCHCONTENT_QUIET OFF)
-FetchContent_GetProperties(cef)
-if(NOT cef_POPULATED)
-    FetchContent_Populate(cef)
+FetchContent_GetProperties(cef_binaries)
+if(NOT cef_binaries_POPULATED)
+    message(STATUS "Extracting CEF binaries...")
+    FetchContent_Populate(cef_binaries)
+    message(STATUS "CEF binaries extracted to: ${cef_binaries_SOURCE_DIR}")
 endif()
 
 # Verify that CEF was successfully downloaded and extracted
-if(NOT EXISTS "${cef_SOURCE_DIR}/include/cef_version.h")
+if(NOT EXISTS "${cef_binaries_SOURCE_DIR}/include/cef_version.h")
+    message(STATUS "CEF source directory: ${cef_binaries_SOURCE_DIR}")
+    file(GLOB CEF_ROOT_FILES "${cef_binaries_SOURCE_DIR}/*")
+    message(STATUS "Contents of CEF source directory:")
+    foreach(file ${CEF_ROOT_FILES})
+        message(STATUS "  ${file}")
+    endforeach()
     message(FATAL_ERROR "CEF download failed or CEF headers not found. Please check the CEF version and platform compatibility.")
 endif()
 
@@ -161,16 +168,16 @@ endif()
 
 # Debug: Show CEF source directory contents
 if(DEBUG_MODE)
-    message(STATUS "CEF source directory: ${cef_SOURCE_DIR}")
+    message(STATUS "CEF source directory: ${cef_binaries_SOURCE_DIR}")
     if(APPLE)
         message(STATUS "Contents of CEF source directory:")
-        file(GLOB CEF_ROOT_FILES "${cef_SOURCE_DIR}/*")
+        file(GLOB CEF_ROOT_FILES "${cef_binaries_SOURCE_DIR}/*")
         foreach(file ${CEF_ROOT_FILES})
             message(STATUS "  ${file}")
         endforeach()
-        if(EXISTS "${cef_SOURCE_DIR}/Release")
+        if(EXISTS "${cef_binaries_SOURCE_DIR}/Release")
             message(STATUS "Contents of Release directory:")
-            file(GLOB CEF_RELEASE_FILES "${cef_SOURCE_DIR}/Release/*")
+            file(GLOB CEF_RELEASE_FILES "${cef_binaries_SOURCE_DIR}/Release/*")
             foreach(file ${CEF_RELEASE_FILES})
                 message(STATUS "  ${file}")
             endforeach()
@@ -178,15 +185,15 @@ if(DEBUG_MODE)
     endif()
 endif()
 
-set(CEF_INCLUDE_DIR "${cef_SOURCE_DIR}/include" CACHE STRING "Path to CEF include directory")
+set(CEF_INCLUDE_DIR "${cef_binaries_SOURCE_DIR}/include" CACHE STRING "Path to CEF include directory")
 
 # Find and set the CEF library location with proper detection
 if(APPLE)
     # On macOS, CEF is distributed as a framework, not individual dylib files
     set(CEF_FRAMEWORK_CANDIDATES 
-        "${cef_SOURCE_DIR}/Release/Chromium Embedded Framework.framework"
-        "${cef_SOURCE_DIR}/Debug/Chromium Embedded Framework.framework"
-        "${cef_SOURCE_DIR}/Chromium Embedded Framework.framework"
+        "${cef_binaries_SOURCE_DIR}/Release/Chromium Embedded Framework.framework"
+        "${cef_binaries_SOURCE_DIR}/Debug/Chromium Embedded Framework.framework"
+        "${cef_binaries_SOURCE_DIR}/Chromium Embedded Framework.framework"
     )
     
     set(CEF_FRAMEWORK_PATH "")
@@ -207,9 +214,9 @@ elseif(WIN32)
     # On Windows, libraries are typically in Release or Debug directory
     # Try to find the correct library directory
     set(CEF_LIBRARY_CANDIDATES 
-        "${cef_SOURCE_DIR}/Release"
-        "${cef_SOURCE_DIR}/Debug"
-        "${cef_SOURCE_DIR}"
+        "${cef_binaries_SOURCE_DIR}/Release"
+        "${cef_binaries_SOURCE_DIR}/Debug"
+        "${cef_binaries_SOURCE_DIR}"
     )
       set(CEF_LIBRARY_DIR "")
     set(CEF_LIB_PATH "")
@@ -238,8 +245,8 @@ elseif(WIN32)
     
     if(NOT CEF_LIBRARY_DIR)
         # If we still can't find libraries, show debug info and fail
-        message(STATUS "CEF source directory: ${cef_SOURCE_DIR}")
-        file(GLOB CEF_ROOT_FILES "${cef_SOURCE_DIR}/*")
+        message(STATUS "CEF source directory: ${cef_binaries_SOURCE_DIR}")
+        file(GLOB CEF_ROOT_FILES "${cef_binaries_SOURCE_DIR}/*")
         message(STATUS "Contents of CEF source directory:")
         foreach(file ${CEF_ROOT_FILES})
             message(STATUS "  ${file}")
@@ -248,7 +255,7 @@ elseif(WIN32)
     endif()
 else()
     # On Linux, libraries are typically in Release directory
-    set(CEF_LIBRARY_DIR "${cef_SOURCE_DIR}/Release" CACHE STRING "Path to CEF library directory")
+    set(CEF_LIBRARY_DIR "${cef_binaries_SOURCE_DIR}/Release" CACHE STRING "Path to CEF library directory")
     set(CEF_SO_PATH "${CEF_LIBRARY_DIR}/libcef.so")
     if(NOT EXISTS "${CEF_SO_PATH}")
         message(FATAL_ERROR "Could not find libcef.so at ${CEF_SO_PATH}")
@@ -262,7 +269,7 @@ if(APPLE)
     # On macOS, link directly to the framework and include headers
     target_link_libraries(cef INTERFACE "${CEF_FRAMEWORK_PATH}/Chromium Embedded Framework")
     target_include_directories(cef INTERFACE 
-        $<BUILD_INTERFACE:${cef_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${cef_binaries_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
     )
     
@@ -274,7 +281,7 @@ elseif(WIN32)
     # On Windows, link to the import library
     target_link_libraries(cef INTERFACE "${CEF_LIB_PATH}")
     target_include_directories(cef INTERFACE 
-        $<BUILD_INTERFACE:${cef_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${cef_binaries_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
     )
     
@@ -303,7 +310,7 @@ else()
     # On Linux, link directly to the shared library
     target_link_libraries(cef INTERFACE "${CEF_SO_PATH}")
     target_include_directories(cef INTERFACE 
-        $<BUILD_INTERFACE:${cef_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${cef_binaries_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
     )
 endif()
@@ -328,6 +335,20 @@ endif()
 enable_testing()
 add_subdirectory(test)
 
+# Ensure the CEF test is built by default when the parent project has testing enabled
+# This prevents the "test not available without configuration" issue
+if(TARGET cef_sanity_test)
+    # Check if the parent project has testing enabled
+    get_directory_property(PARENT_HAS_TESTING PARENT_DIRECTORY BUILDSYSTEM_TARGETS)
+    if(PARENT_HAS_TESTING OR BUILD_TESTING OR CMAKE_TESTING_ENABLED)
+        # Make the test target build by default (remove EXCLUDE_FROM_ALL)
+        set_target_properties(cef_sanity_test PROPERTIES
+            EXCLUDE_FROM_ALL FALSE
+        )
+        message(STATUS "CEF test will be built by default when parent project builds")
+    endif()
+endif()
+
 # The cef_sanity_test target definition has been moved to test/CMakeLists.txt.
 
 # Install config for CPM consumers
@@ -350,7 +371,7 @@ configure_file(
 install(TARGETS cef EXPORT CEFTargets)
 
 # Install CEF headers for the exported target
-install(DIRECTORY "${cef_SOURCE_DIR}/include/" 
+install(DIRECTORY "${cef_binaries_SOURCE_DIR}/include/" 
         DESTINATION include 
         FILES_MATCHING PATTERN "*.h")
 
