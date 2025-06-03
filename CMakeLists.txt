@@ -17,9 +17,21 @@ set(MIN_CEF_ARCHIVE_SIZE 10000000)
 set(CEF_VERSION "118.7.1+g99817d2+chromium-118.0.5993.119")
 
 if(APPLE)
-    # For macOS, use macosx64 for both Intel and Apple Silicon
-    # CEF typically provides universal binaries or Intel binaries that work on both
-    set(CEF_PLATFORM "macosx64")
+    # Detect Apple Silicon vs Intel Mac
+    execute_process(
+        COMMAND uname -m
+        OUTPUT_VARIABLE MACHINE_ARCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    
+    if(MACHINE_ARCH STREQUAL "arm64")
+        set(CEF_PLATFORM "macosarm64")
+        message(STATUS "Detected Apple Silicon Mac - using ARM64 CEF binary")
+    else()
+        set(CEF_PLATFORM "macosx64")
+        message(STATUS "Detected Intel Mac - using x64 CEF binary")
+    endif()
+    
     set(CEF_LIBRARY_EXTENSION "dylib")
 elseif(WIN32)
     # For Windows, use windows64 platform
