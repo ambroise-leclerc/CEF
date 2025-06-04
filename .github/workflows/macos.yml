@@ -2,13 +2,9 @@ name: macOS Build
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: ['**']
   pull_request:
-    branches:
-      - main
-      - master
+    branches: ['**']
 
 jobs:
   macos-build:
@@ -29,7 +25,7 @@ jobs:
           cmake-version: '3.27.9'
       
       - name: Configure
-        run: cmake -B build -S .
+        run: cmake -B build -S . -DCEF_ROBUST_DOWNLOAD=ON
       
       - name: Build
         run: cmake --build build --config Release --target cef_sanity_test

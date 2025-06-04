@@ -2,13 +2,9 @@ name: Windows Build
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: ['**']
   pull_request:
-    branches:
-      - main
-      - master
+    branches: ['**']
 
 jobs:
   windows-build:
@@ -30,7 +26,7 @@ jobs:
           cmake-version: '3.27.9'
       
       - name: Configure
-        run: cmake -B build -S . -G "Visual Studio 17 2022"
+        run: cmake -B build -S . -G "Visual Studio 17 2022" -DCEF_ROBUST_DOWNLOAD=ON
         shell: bash
       
       - name: Build

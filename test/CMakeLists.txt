@@ -31,8 +31,7 @@ if(APPLE)
         "$<TARGET_FILE_DIR:cef_sanity_test>/../Frameworks/Chromium Embedded Framework.framework"
         COMMENT "Copying CEF framework to Frameworks directory"
     )
-    
-    # Copy CEF resources if they exist
+      # Copy CEF resources if they exist
     if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
         add_custom_command(TARGET cef_sanity_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -75,8 +74,7 @@ elseif(WIN32)
                 COMMENT "Copying CEF support DLL: ${dll}"
             )
         endif()
-    endforeach()
-      # Copy CEF resources
+    endforeach()    # Copy CEF resources
     if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
         add_custom_command(TARGET cef_sanity_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
