@@ -54,14 +54,14 @@ CPMAddPackage(
   VERSION 137.0.4
   OPTIONS
     "CEF_ROBUST_DOWNLOAD ON"         # Enables robust download with retries and fallbacks (default: ON)
-    "CEF_USE_MINIMAL_DIST OFF"       # Download the full CEF distribution instead of the minimal one (default: ON)
+    "CEF_USE_MINIMAL_DIST ON"        # Download the minimal CEF distribution instead of the full one (default: OFF)
 )
 # Link CEF to your application target
 # target_link_libraries(my_app PRIVATE cef)
 ```
 
 - `CEF_ROBUST_DOWNLOAD`: If ON (default), enables a robust download strategy with retries and fallbacks for large files or unreliable networks.
-- `CEF_USE_MINIMAL_DIST`: If ON (default), downloads the smaller _minimal CEF distribution. Set to OFF to download the full CEF package (includes more resources and tools).
+- `CEF_USE_MINIMAL_DIST`: If ON, downloads the smaller _minimal CEF distribution. If OFF (default), downloads the full CEF package (includes more resources and tools).
 
 ## Features
 - Provides a reproducible and automated packaging of CEF for Linux, macOS, and Windows
@@ -233,14 +233,14 @@ CPMAddPackage(
   VERSION 137.0.4
   OPTIONS
     "CEF_ROBUST_DOWNLOAD ON"         # Active le téléchargement robuste avec réessais et solutions de repli (par défaut : ON)
-    "CEF_USE_MINIMAL_DIST OFF"       # Télécharge la distribution complète de CEF au lieu de la version minimale (par défaut : ON)
+    "CEF_USE_MINIMAL_DIST ON"        # Télécharge la distribution minimale de CEF au lieu de la version complète (par défaut : OFF)
 )
 # Liez CEF à votre cible applicative
 # target_link_libraries(my_app PRIVATE cef)
 ```
 
 - `CEF_ROBUST_DOWNLOAD` : Si activé (par défaut), active une stratégie de téléchargement robuste avec réessais et solutions de repli pour les fichiers volumineux ou les réseaux peu fiables.
-- `CEF_USE_MINIMAL_DIST` : Si activé (par défaut), télécharge la plus petite _distribution minimale de CEF. Désactivez cette option pour télécharger le package complet de CEF (inclut plus de ressources et d'outils).
+- `CEF_USE_MINIMAL_DIST` : Si activé, télécharge la plus petite _distribution minimale de CEF. Si désactivé (par défaut), télécharge le package complet de CEF (inclut plus de ressources et d'outils).
 
 ## Fonctionnalités
 - Packaging reproductible et automatisé de CEF pour Linux, macOS et Windows
