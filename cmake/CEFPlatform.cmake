@@ -123,8 +123,12 @@ function(_cef_find_macos_framework)
     
     # Extract the directory for CEF_LIBRARY_DIR
     get_filename_component(CEF_LIBRARY_DIR "${CEF_FRAMEWORK_PATH}" DIRECTORY)
+    
+    # Set variables in parent scope AND cache them globally
     set(CEF_FRAMEWORK_PATH "${CEF_FRAMEWORK_PATH}" PARENT_SCOPE)
     set(CEF_LIBRARY_DIR "${CEF_LIBRARY_DIR}" PARENT_SCOPE)
+    set(CEF_FRAMEWORK_PATH "${CEF_FRAMEWORK_PATH}" CACHE STRING "Path to CEF framework" FORCE)
+    set(CEF_LIBRARY_DIR "${CEF_LIBRARY_DIR}" CACHE STRING "Path to CEF library directory" FORCE)
 endfunction()
 
 # Internal function to find Windows libraries
@@ -166,9 +170,13 @@ function(_cef_find_windows_libraries)
         message(FATAL_ERROR "Could not find libcef.lib and libcef.dll in any expected location")
     endif()
     
+    # Set variables in parent scope AND cache them globally
     set(CEF_LIBRARY_DIR "${CEF_LIBRARY_DIR}" PARENT_SCOPE)
     set(CEF_LIB_PATH "${CEF_LIB_PATH}" PARENT_SCOPE)
     set(CEF_DLL_PATH "${CEF_DLL_PATH}" PARENT_SCOPE)
+    set(CEF_LIBRARY_DIR "${CEF_LIBRARY_DIR}" CACHE STRING "Path to CEF library directory" FORCE)
+    set(CEF_LIB_PATH "${CEF_LIB_PATH}" CACHE STRING "Path to CEF lib file" FORCE)
+    set(CEF_DLL_PATH "${CEF_DLL_PATH}" CACHE STRING "Path to CEF DLL file" FORCE)
 endfunction()
 
 # Internal function to find Linux libraries
@@ -179,8 +187,11 @@ function(_cef_find_linux_libraries)
         message(FATAL_ERROR "Could not find libcef.so at ${CEF_SO_PATH}")
     endif()
     
+    # Set variables in parent scope AND cache them globally
     set(CEF_LIBRARY_DIR "${CEF_LIBRARY_DIR}" PARENT_SCOPE)
     set(CEF_SO_PATH "${CEF_SO_PATH}" PARENT_SCOPE)
+    set(CEF_LIBRARY_DIR "${CEF_LIBRARY_DIR}" CACHE STRING "Path to CEF library directory" FORCE)
+    set(CEF_SO_PATH "${CEF_SO_PATH}" CACHE STRING "Path to CEF shared library" FORCE)
 endfunction()
 
 # Internal function for debug output
