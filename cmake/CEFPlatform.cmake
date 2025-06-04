@@ -219,7 +219,7 @@ endfunction()
 # Internal function to configure macOS target
 function(_cef_configure_macos_target)
     # Link directly to the framework and include headers
-    target_link_libraries(cef INTERFACE "${CEF_FRAMEWORK_PATH}/Chromium Embedded Framework")
+    target_link_libraries(cef INTERFACE "${CEF_FRAMEWORK_PATH}")
     target_include_directories(cef INTERFACE 
         $<BUILD_INTERFACE:${CEF_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
