@@ -24,9 +24,12 @@ if(APPLE)
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     
+    # For CEF 118.7.1, ARM64 builds may not be available, so we use Intel builds with Rosetta 2
+    # This provides better compatibility and avoids download failures
     if(MACHINE_ARCH STREQUAL "arm64")
-        set(CEF_PLATFORM "macosarm64")
-        message(STATUS "Detected Apple Silicon Mac - using ARM64 CEF binary")
+        set(CEF_PLATFORM "macosx64")  # Use Intel build on ARM64 (runs via Rosetta 2)
+        message(STATUS "Detected Apple Silicon Mac - using Intel CEF binary (runs via Rosetta 2)")
+        message(STATUS "Note: Native ARM64 CEF builds may not be available for version ${CEF_VERSION}")
     else()
         set(CEF_PLATFORM "macosx64")
         message(STATUS "Detected Intel Mac - using x64 CEF binary")
@@ -81,13 +84,12 @@ elseif(CEF_ROBUST_DOWNLOAD)
             message(STATUS "CEF archive already exists, skipping download")
         else()
             message(STATUS "Downloading CEF archive to: ${CEF_ARCHIVE_PATH}")
-            
-            # Use file(DOWNLOAD) with no timeout and progress reporting
+              # Use file(DOWNLOAD) with reasonable timeout and progress reporting
             file(DOWNLOAD 
                 "${CEF_URL}" 
                 "${CEF_ARCHIVE_PATH}"
-                TIMEOUT 0                    # No timeout - let it take as long as needed
-                INACTIVITY_TIMEOUT 0         # No inactivity timeout
+                TIMEOUT 1800                 # 30 minute timeout total
+                INACTIVITY_TIMEOUT 300       # 5 minute inactivity timeout
                 SHOW_PROGRESS               # Show download progress
                 STATUS download_status
                 LOG download_log
@@ -100,21 +102,76 @@ elseif(CEF_ROBUST_DOWNLOAD)
             if(NOT status_code EQUAL 0)
                 message(STATUS "Download failed with status: ${status_code} - ${status_string}")
                 message(STATUS "Download log: ${download_log}")
-                
-                # Retry with curl if available
+                  # Retry with curl if available, using more robust options
                 find_program(CURL_EXECUTABLE curl)
                 if(CURL_EXECUTABLE)
-                    message(STATUS "Retrying download with curl...")
+                    message(STATUS "Retrying download with curl using HTTP/1.1...")
                     execute_process(
-                        COMMAND ${CURL_EXECUTABLE} -L --max-time 0 --connect-timeout 30 
-                                -o "${CEF_ARCHIVE_PATH}" "${CEF_URL}"
+                        COMMAND ${CURL_EXECUTABLE} 
+                                -L                          # Follow redirects
+                                --http1.1                   # Force HTTP/1.1 to avoid HTTP/2 issues
+                                --retry 3                   # Retry failed downloads
+                                --retry-delay 5             # Wait 5 seconds between retries
+                                --max-time 1800             # 30 minute timeout total
+                                --connect-timeout 60        # 60 second connection timeout
+                                --progress-bar              # Show progress bar instead of verbose output
+                                -o "${CEF_ARCHIVE_PATH}" 
+                                "${CEF_URL}"
                         RESULT_VARIABLE curl_result
                         OUTPUT_VARIABLE curl_output
                         ERROR_VARIABLE curl_error
                     )
-                    
-                    if(NOT curl_result EQUAL 0)
-                        message(FATAL_ERROR "Failed to download CEF with both CMake and curl. Error: ${curl_error}")
+                      if(NOT curl_result EQUAL 0)
+                        message(STATUS "Curl output: ${curl_output}")
+                        message(STATUS "Curl failed with error (${curl_result}): ${curl_error}")
+                        
+                        # Try wget as a last resort
+                        find_program(WGET_EXECUTABLE wget)
+                        if(WGET_EXECUTABLE)
+                            message(STATUS "Retrying download with wget...")
+                            execute_process(
+                                COMMAND ${WGET_EXECUTABLE} 
+                                        --tries=3                   # Retry 3 times
+                                        --wait=5                    # Wait 5 seconds between retries
+                                        --timeout=1800              # 30 minute timeout
+                                        --progress=bar              # Show progress
+                                        -O "${CEF_ARCHIVE_PATH}" 
+                                        "${CEF_URL}"
+                                RESULT_VARIABLE wget_result
+                                OUTPUT_VARIABLE wget_output
+                                ERROR_VARIABLE wget_error
+                            )
+                            
+                            if(NOT wget_result EQUAL 0)
+                                message(STATUS "Wget output: ${wget_output}")
+                                message(FATAL_ERROR "Failed to download CEF with CMake, curl, and wget. Wget error (${wget_result}): ${wget_error}. Please check your internet connection and the CEF URL: ${CEF_URL}")
+                            endif()                        else()
+                            # On Windows, try PowerShell as another fallback
+                            if(WIN32)
+                                message(STATUS "Retrying download with PowerShell...")
+                                execute_process(
+                                    COMMAND powershell -Command "
+                                        $ProgressPreference = 'SilentlyContinue'
+                                        try {
+                                            Invoke-WebRequest -Uri '${CEF_URL}' -OutFile '${CEF_ARCHIVE_PATH}' -TimeoutSec 1800
+                                            exit 0
+                                        } catch {
+                                            Write-Error $_.Exception.Message
+                                            exit 1
+                                        }"
+                                    RESULT_VARIABLE powershell_result
+                                    OUTPUT_VARIABLE powershell_output
+                                    ERROR_VARIABLE powershell_error
+                                )
+                                
+                                if(NOT powershell_result EQUAL 0)
+                                    message(STATUS "PowerShell output: ${powershell_output}")
+                                    message(FATAL_ERROR "Failed to download CEF with CMake, curl, and PowerShell. PowerShell error (${powershell_result}): ${powershell_error}. Please check your internet connection and the CEF URL: ${CEF_URL}")
+                                endif()
+                            else()
+                                message(FATAL_ERROR "Failed to download CEF with CMake, curl, and wget. Please check your internet connection and the CEF URL: ${CEF_URL}")
+                            endif()
+                        endif()
                     endif()
                 else()
                     message(FATAL_ERROR "Failed to download CEF: ${status_string}")
@@ -207,17 +264,36 @@ if(APPLE)
         "${cef_binaries_SOURCE_DIR}/Debug/Chromium Embedded Framework.framework"
         "${cef_binaries_SOURCE_DIR}/Chromium Embedded Framework.framework"
     )
-    
-    set(CEF_FRAMEWORK_PATH "")
+      set(CEF_FRAMEWORK_PATH "")
     foreach(candidate ${CEF_FRAMEWORK_CANDIDATES})
+        message(STATUS "Checking for CEF framework at: ${candidate}")
         if(EXISTS "${candidate}")
             set(CEF_FRAMEWORK_PATH "${candidate}")
             message(STATUS "Found CEF framework at: ${CEF_FRAMEWORK_PATH}")
             break()
+        else()
+            message(STATUS "  Framework not found at this location")
         endif()
     endforeach()
     
     if(NOT CEF_FRAMEWORK_PATH)
+        message(STATUS "Failed to find CEF framework. Debugging information:")
+        message(STATUS "CEF source directory: ${cef_binaries_SOURCE_DIR}")
+        file(GLOB CEF_ROOT_FILES "${cef_binaries_SOURCE_DIR}/*")
+        message(STATUS "Contents of CEF source directory:")
+        foreach(file ${CEF_ROOT_FILES})
+            message(STATUS "  ${file}")
+        endforeach()
+        
+        # Check Release directory specifically
+        if(EXISTS "${cef_binaries_SOURCE_DIR}/Release")
+            file(GLOB CEF_RELEASE_FILES "${cef_binaries_SOURCE_DIR}/Release/*")
+            message(STATUS "Contents of Release directory:")
+            foreach(file ${CEF_RELEASE_FILES})
+                message(STATUS "  ${file}")
+            endforeach()
+        endif()
+        
         message(FATAL_ERROR "Could not find Chromium Embedded Framework.framework in any expected location")
     endif()
       # Extract the directory for CEF_LIBRARY_DIR
