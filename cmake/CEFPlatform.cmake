@@ -16,7 +16,7 @@ if(APPLE)
         message(STATUS "Detected Intel Mac - using x64 CEF binary")
     endif()
     set(CEF_LIBRARY_EXTENSION "dylib")
-elif(WIN32)
+elseif(WIN32)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         execute_process(
             COMMAND uname -m
