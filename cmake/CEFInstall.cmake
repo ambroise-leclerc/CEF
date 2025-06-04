@@ -15,7 +15,7 @@ configure_file(
 )
 
 install(TARGETS cef EXPORT CEFTargets)
-install(DIRECTORY "${cef_binaries_SOURCE_DIR}/include/" 
+install(DIRECTORY "${CEF_SOURCE_DIR}/include/" 
         DESTINATION include 
         FILES_MATCHING PATTERN "*.h")
 
