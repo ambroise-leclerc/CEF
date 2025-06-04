@@ -18,12 +18,7 @@ if(APPLE)
     set(CEF_LIBRARY_EXTENSION "dylib")
 elseif(WIN32)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        execute_process(
-            COMMAND uname -m
-            OUTPUT_VARIABLE MACHINE_ARCH_WIN
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        if(MACHINE_ARCH_WIN STREQUAL "aarch64" OR MACHINE_ARCH_WIN STREQUAL "arm64")
+        if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64" OR CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
             set(CEF_PLATFORM "windowsarm64")
             message(STATUS "Detected Windows ARM64 - using windowsarm64 CEF binary")
         else()
