@@ -2,13 +2,9 @@ name: Windows Build
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: ['**']
   pull_request:
-    branches:
-      - main
-      - master
+    branches: [ main ]
 
 jobs:
   windows-build:
@@ -22,7 +18,17 @@ jobs:
         run: |
           echo "🪟 Building CEF for Windows"
           echo "Generator: Visual Studio 17 2022"
-        shell: cmd
+          echo "Architecture: $env:PROCESSOR_ARCHITECTURE"
+          echo "Windows version: $(Get-WmiObject -Class Win32_OperatingSystem | Select-Object -ExpandProperty Caption)"
+          echo "Available disk space: $((Get-PSDrive C | Select-Object -ExpandProperty Free) / 1GB) GB"
+        shell: powershell
+      
+      - name: Check network connectivity
+        run: |
+          echo "Testing network connectivity to CEF builds..."
+          curl -I https://cef-builds.spotifycdn.com/ || echo "Direct connection failed, but this is expected"
+          echo "Network test completed"
+        shell: bash
       
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1
@@ -30,7 +36,7 @@ jobs:
           cmake-version: '3.27.9'
       
       - name: Configure
-        run: cmake -B build -S . -G "Visual Studio 17 2022"
+        run: cmake -B build -S . -G "Visual Studio 17 2022" -DCEF_ROBUST_DOWNLOAD=ON
         shell: bash
       
       - name: Build
