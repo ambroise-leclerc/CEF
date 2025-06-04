@@ -141,11 +141,11 @@ elseif(CEF_ROBUST_DOWNLOAD)
                                 OUTPUT_VARIABLE wget_output
                                 ERROR_VARIABLE wget_error
                             )
-                            
-                            if(NOT wget_result EQUAL 0)
+                              if(NOT wget_result EQUAL 0)
                                 message(STATUS "Wget output: ${wget_output}")
                                 message(FATAL_ERROR "Failed to download CEF with CMake, curl, and wget. Wget error (${wget_result}): ${wget_error}. Please check your internet connection and the CEF URL: ${CEF_URL}")
-                            endif()                        else()
+                            endif()
+                        else()
                             # On Windows, try PowerShell as another fallback
                             if(WIN32)
                                 message(STATUS "Retrying download with PowerShell...")

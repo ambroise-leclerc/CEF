@@ -27,11 +27,11 @@ if(APPLE)
     
     add_custom_command(TARGET cef_sanity_test POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CEF_FRAMEWORK_PATH}"
-        "$<TARGET_FILE_DIR:cef_sanity_test>/../Frameworks/Chromium Embedded Framework.framework"
+        "${CEF_FRAMEWORK_PATH}"        "$<TARGET_FILE_DIR:cef_sanity_test>/../Frameworks/Chromium Embedded Framework.framework"
         COMMENT "Copying CEF framework to Frameworks directory"
     )
-      # Copy CEF resources if they exist
+    
+    # Copy CEF resources if they exist
     if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
         add_custom_command(TARGET cef_sanity_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
