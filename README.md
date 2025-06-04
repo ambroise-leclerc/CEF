@@ -16,7 +16,7 @@ This repository provides a packaging solution for the Chromium Embedded Framewor
 To use this CEF package in your own CMake project, simply add the following line to your `CMakeLists.txt`:
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@118.7.1")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.4")
 # Link CEF to your application target (replace my_app with your target name)
 target_link_libraries(my_app PRIVATE cef)
 ```
@@ -43,6 +43,26 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(cef)
 ```
 
+### Example: Advanced CPM.cmake usage with options
+
+You can use the non-compact CPM.cmake notation to set CEF options such as `CEF_ROBUST_DOWNLOAD` and `CEF_USE_MINIMAL_DIST`:
+
+```cmake
+CPMAddPackage(
+  NAME cef
+  GITHUB_REPOSITORY ambroise-leclerc/CEF
+  VERSION 137.0.4
+  OPTIONS
+    "CEF_ROBUST_DOWNLOAD ON"         # Enables robust download with retries and fallbacks (default: ON)
+    "CEF_USE_MINIMAL_DIST OFF"       # Download the full CEF distribution instead of the minimal one (default: ON)
+)
+# Link CEF to your application target
+# target_link_libraries(my_app PRIVATE cef)
+```
+
+- `CEF_ROBUST_DOWNLOAD`: If ON (default), enables a robust download strategy with retries and fallbacks for large files or unreliable networks.
+- `CEF_USE_MINIMAL_DIST`: If ON (default), downloads the smaller _minimal CEF distribution. Set to OFF to download the full CEF package (includes more resources and tools).
+
 ## Features
 - Provides a reproducible and automated packaging of CEF for Linux, macOS, and Windows
 - Integrates with CMake and CPM.cmake for easy consumption
@@ -53,8 +73,11 @@ FetchContent_MakeAvailable(cef)
 
 This CEF packaging supports the following platforms:
 - **Linux (x64)**: Uses `cef_binary_*_linux64.tar.bz2` distribution
+- **Linux (ARM64)**: Uses `cef_binary_*_linuxarm64.tar.bz2` distribution
 - **macOS (x64)**: Uses `cef_binary_*_macosx64.tar.bz2` distribution
+- **macOS (ARM64)**: Uses `cef_binary_*_macosarm64.tar.bz2` distribution
 - **Windows (x64)**: Uses `cef_binary_*_windows64.tar.bz2` distribution
+- **Windows (ARM64)**: Uses `cef_binary_*_windowsarm64.tar.bz2` distribution
 
 ### Build Requirements
 
@@ -73,7 +96,7 @@ This CEF packaging supports the following platforms:
 
 The platform is automatically detected during the CMake configuration phase, and the appropriate CEF binary distribution is downloaded and configured.
 
-**Current CEF Version**: 118.7.1+g99817d2+chromium-118.0.5993.119
+**Current CEF Version**: 137.0.4+g8614a8d+chromium-137.0.7151.6
 
 This version is chosen for its stability and cross-platform availability. If you need a different CEF version, you can modify the `CEF_VERSION` variable in the main `CMakeLists.txt` file, but ensure that the version you choose has builds available for all platforms you intend to support.
 
@@ -172,7 +195,7 @@ Ce dépôt propose une solution de packaging automatisée pour Chromium Embedded
 Pour intégrer ce package CEF à votre projet CMake, ajoutez simplement la ligne suivante à votre `CMakeLists.txt` :
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@118.7.1")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.4")
 # Liez CEF à votre cible applicative (remplacez my_app par le nom de votre cible)
 target_link_libraries(my_app PRIVATE cef)
 ```
@@ -199,6 +222,26 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(cef)
 ```
 
+### Exemple : Utilisation avancée de CPM.cmake avec options
+
+Vous pouvez utiliser la notation CPM.cmake non compacte pour définir des options CEF telles que `CEF_ROBUST_DOWNLOAD` et `CEF_USE_MINIMAL_DIST` :
+
+```cmake
+CPMAddPackage(
+  NAME cef
+  GITHUB_REPOSITORY ambroise-leclerc/CEF
+  VERSION 137.0.4
+  OPTIONS
+    "CEF_ROBUST_DOWNLOAD ON"         # Active le téléchargement robuste avec réessais et solutions de repli (par défaut : ON)
+    "CEF_USE_MINIMAL_DIST OFF"       # Télécharge la distribution complète de CEF au lieu de la version minimale (par défaut : ON)
+)
+# Liez CEF à votre cible applicative
+# target_link_libraries(my_app PRIVATE cef)
+```
+
+- `CEF_ROBUST_DOWNLOAD` : Si activé (par défaut), active une stratégie de téléchargement robuste avec réessais et solutions de repli pour les fichiers volumineux ou les réseaux peu fiables.
+- `CEF_USE_MINIMAL_DIST` : Si activé (par défaut), télécharge la plus petite _distribution minimale de CEF. Désactivez cette option pour télécharger le package complet de CEF (inclut plus de ressources et d'outils).
+
 ## Fonctionnalités
 - Packaging reproductible et automatisé de CEF pour Linux, macOS et Windows
 - Intégration transparente avec CMake et CPM.cmake
@@ -207,8 +250,11 @@ FetchContent_MakeAvailable(cef)
 
 ## Plateformes supportées
 - **Linux (x64)** : `cef_binary_*_linux64.tar.bz2`
+- **Linux (ARM64)** : `cef_binary_*_linuxarm64.tar.bz2`
 - **macOS (x64)** : `cef_binary_*_macosx64.tar.bz2`
+- **macOS (ARM64)** : `cef_binary_*_macosarm64.tar.bz2`
 - **Windows (x64)** : `cef_binary_*_windows64.tar.bz2`
+- **Windows (ARM64)** : `cef_binary_*_windowsarm64.tar.bz2`
 
 ## Prérequis de compilation
 
@@ -227,7 +273,7 @@ FetchContent_MakeAvailable(cef)
 
 La détection de la plateforme est automatique lors de la configuration CMake, et la distribution binaire appropriée est téléchargée.
 
-**Version CEF actuelle** : 118.7.1+g99817d2+chromium-118.0.5993.119
+**Version CEF actuelle** : 137.0.4+g8614a8d+chromium-137.0.7151.6
 
 Pour utiliser une autre version, modifiez la variable `CEF_VERSION` dans le fichier `CMakeLists.txt` principal, en veillant à la disponibilité multiplateforme.
 

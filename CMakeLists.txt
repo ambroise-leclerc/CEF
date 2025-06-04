@@ -9,12 +9,15 @@ set(CEF_LOCAL_ARCHIVE_PATH "" CACHE STRING "Path to a locally provided CEF archi
 # Option to enable robust download with no timeouts
 option(CEF_ROBUST_DOWNLOAD "Enable robust download strategy with no timeouts" ON)
 
+# Option to use the minimal CEF distribution (smaller, fewer resources)
+option(CEF_USE_MINIMAL_DIST "Download the _minimal CEF distribution (recommended for most users)" ON)
+
 # Minimum expected CEF archive size in bytes (e.g., 10 MB)
 set(MIN_CEF_ARCHIVE_SIZE 10000000)
 
 # Detect platform and set CEF version and platform accordingly
-# Using CEF version 118 which has good cross-platform support
-set(CEF_VERSION "118.7.1+g99817d2+chromium-118.0.5993.119")
+# Using CEF version 137.0.4+g8614a8d+chromium-137.0.7151.6
+set(CEF_VERSION "137.0.4+g8614a8d+chromium-137.0.7151.6")
 
 if(APPLE)
     # Detect Apple Silicon vs Intel Mac
@@ -24,12 +27,10 @@ if(APPLE)
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     
-    # For CEF 118.7.1, ARM64 builds may not be available, so we use Intel builds with Rosetta 2
-    # This provides better compatibility and avoids download failures
+    # For CEF 137+, use native ARM64 build if on Apple Silicon
     if(MACHINE_ARCH STREQUAL "arm64")
-        set(CEF_PLATFORM "macosx64")  # Use Intel build on ARM64 (runs via Rosetta 2)
-        message(STATUS "Detected Apple Silicon Mac - using Intel CEF binary (runs via Rosetta 2)")
-        message(STATUS "Note: Native ARM64 CEF builds may not be available for version ${CEF_VERSION}")
+        set(CEF_PLATFORM "macosarm64")  # Use native ARM64 CEF binary
+        message(STATUS "Detected Apple Silicon Mac - using ARM64 CEF binary (macosarm64)")
     else()
         set(CEF_PLATFORM "macosx64")
         message(STATUS "Detected Intel Mac - using x64 CEF binary")
@@ -37,21 +38,46 @@ if(APPLE)
     
     set(CEF_LIBRARY_EXTENSION "dylib")
 elseif(WIN32)
-    # For Windows, use windows64 platform
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        set(CEF_PLATFORM "windows64")
+        execute_process(
+            COMMAND uname -m
+            OUTPUT_VARIABLE MACHINE_ARCH_WIN
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(MACHINE_ARCH_WIN STREQUAL "aarch64" OR MACHINE_ARCH_WIN STREQUAL "arm64")
+            set(CEF_PLATFORM "windowsarm64")
+            message(STATUS "Detected Windows ARM64 - using windowsarm64 CEF binary")
+        else()
+            set(CEF_PLATFORM "windows64")
+            message(STATUS "Detected Windows x64 - using windows64 CEF binary")
+        endif()
     else()
         set(CEF_PLATFORM "windows32")
     endif()
     set(CEF_LIBRARY_EXTENSION "dll")
 elseif(UNIX)
-    set(CEF_PLATFORM "linux64")
+    execute_process(
+        COMMAND uname -m
+        OUTPUT_VARIABLE MACHINE_ARCH_LINUX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(MACHINE_ARCH_LINUX STREQUAL "aarch64" OR MACHINE_ARCH_LINUX STREQUAL "arm64")
+        set(CEF_PLATFORM "linuxarm64")
+        message(STATUS "Detected Linux ARM64 - using linuxarm64 CEF binary")
+    else()
+        set(CEF_PLATFORM "linux64")
+        message(STATUS "Detected Linux x64 - using linux64 CEF binary")
+    endif()
     set(CEF_LIBRARY_EXTENSION "so")
 else()
     message(FATAL_ERROR "Unsupported platform")
 endif()
 
-set(CEF_DIST_NAME "cef_binary_${CEF_VERSION}_${CEF_PLATFORM}")
+if(CEF_USE_MINIMAL_DIST)
+    set(CEF_DIST_NAME "cef_binary_${CEF_VERSION}_${CEF_PLATFORM}_minimal")
+else()
+    set(CEF_DIST_NAME "cef_binary_${CEF_VERSION}_${CEF_PLATFORM}")
+endif()
 set(CEF_URL "https://cef-builds.spotifycdn.com/${CEF_DIST_NAME}.tar.bz2")
 
 # Display the URL being used for debugging
