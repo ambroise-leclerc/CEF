@@ -2,11 +2,13 @@ name: Linux Build
 
 on:
   push:
-    branches: ['**']
+        branches:
+      - main
+      - master
   pull_request:
-    branches: [ main ]
-
-jobs:
+    branches:
+      - main
+      - master
   linux-build:
     name: Linux Build
     runs-on: ubuntu-latest
@@ -16,17 +18,8 @@ jobs:
       
       - name: Display build information
         run: |
-          echo "🐧 Building CEF for Linux"
-          echo "Generator: Unix Makefiles (default)"
-          echo "Architecture: $(uname -m)"
-          echo "Distribution: $(lsb_release -d 2>/dev/null || cat /etc/os-release | grep PRETTY_NAME || echo 'Unknown')"
-          echo "Available disk space: $(df -h . | tail -1 | awk '{print $4}')"
-      
-      - name: Check network connectivity
-        run: |
-          echo "Testing network connectivity to CEF builds..."
-          curl -I https://cef-builds.spotifycdn.com/ || echo "Direct connection failed, but this is expected"
-          echo "Network test completed"
+          echo "��          echo "🐧 Building CEF for Linux"
+erator: Unix Makefiles (default)"
       
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1
@@ -34,7 +27,7 @@ jobs:
           cmake-version: '3.27.9'
       
       - name: Configure
-        run: cmake -B build -S . -DCEF_ROBUST_DOWNLOAD=ON
+        run: cmake -B build -S .
       
       - name: Build
         run: cmake --build build --config Release --target cef_sanity_test

@@ -50,3 +50,5 @@ jobs:
           path: |
             build/test/cef_sanity_test
           retention-days: 7
+uild/test/cef_sanity_test
+          retention-days: 7
