@@ -188,6 +188,56 @@ elseif(WIN32)
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${cef_binaries_SOURCE_DIR}/Resources"
             "${CMAKE_CURRENT_BINARY_DIR}/Resources"
+            COMMENT "Copying CEF Resources to test working directory"        )
+    endif()
+elseif(UNIX AND NOT APPLE)  # Linux
+    # On Linux, copy the CEF shared libraries to the output directory for the test to run
+    add_custom_command(TARGET cef_sanity_test POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CEF_LIBRARY_DIR}/libcef.so"
+        $<TARGET_FILE_DIR:cef_sanity_test>
+        COMMENT "Copying CEF shared library to output directory"
+    )
+    
+    # Copy CEF resources for sanity test
+    if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
+        add_custom_command(TARGET cef_sanity_test POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${cef_binaries_SOURCE_DIR}/Resources"
+            $<TARGET_FILE_DIR:cef_sanity_test>/Resources
+            COMMENT "Copying CEF Resources"
+        )
+    endif()
+    
+    # Linux setup for resources test  
+    add_custom_command(TARGET cef_resources_test POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CEF_LIBRARY_DIR}/libcef.so"
+        $<TARGET_FILE_DIR:cef_resources_test>
+        COMMENT "Copying CEF shared library to resources test output directory"
+    )
+    
+    # Also copy to the working directory for CTest
+    add_custom_command(TARGET cef_resources_test POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CEF_LIBRARY_DIR}/libcef.so"
+        "${CMAKE_CURRENT_BINARY_DIR}"
+        COMMENT "Copying CEF shared library to test working directory"
+    )
+    
+    # Copy CEF resources for resources test
+    if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
+        add_custom_command(TARGET cef_resources_test POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${cef_binaries_SOURCE_DIR}/Resources"
+            $<TARGET_FILE_DIR:cef_resources_test>/Resources
+            COMMENT "Copying CEF Resources for resources test"
+        )
+        # Also copy to working directory for CTest
+        add_custom_command(TARGET cef_resources_test POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${cef_binaries_SOURCE_DIR}/Resources"
+            "${CMAKE_CURRENT_BINARY_DIR}/Resources"
             COMMENT "Copying CEF Resources to test working directory"
         )
     endif()

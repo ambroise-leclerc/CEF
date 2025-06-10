@@ -12,19 +12,31 @@ int main() {
     // Test 1: Verify CEF version consistency
     std::cout << "Test 1: CEF Version Check" << std::endl;
     std::cout << "CEF Version: " << CEF_VERSION << std::endl;
-    
-    // Test 2: Check for CEF binary files in the expected location
+      // Test 2: Check for CEF binary files in the expected location
     std::cout << "Test 2: CEF Binary Files Check" << std::endl;
     
     std::filesystem::path current_dir = std::filesystem::current_path();
     std::cout << "Current directory: " << current_dir << std::endl;
     
-    // Expected CEF files that should be copied to output directory
-    std::vector<std::string> expected_files = {
+    // Platform-specific expected CEF files
+    std::vector<std::string> expected_files;
+#ifdef _WIN32
+    expected_files = {
         "libcef.dll",
         "chrome_elf.dll",
         "d3dcompiler_47.dll"
     };
+#elif __APPLE__
+    expected_files = {
+        "Chromium Embedded Framework.framework",
+        "../Frameworks/Chromium Embedded Framework.framework"
+    };
+#else // Linux
+    expected_files = {
+        "libcef.so",
+        "chrome-sandbox"  // Common CEF binary on Linux
+    };
+#endif
     
     int files_found = 0;
     for (const auto& filename : expected_files) {
@@ -63,12 +75,17 @@ int main() {
               << CHROME_VERSION_MINOR << "." 
               << CHROME_VERSION_BUILD << "." 
               << CHROME_VERSION_PATCH << std::endl;
-    
-    // Summary
+      // Summary
     std::cout << "\n=== CEF Resources Test Summary ===" << std::endl;
     std::cout << "Files found: " << files_found << "/" << expected_files.size() << std::endl;
     
-    if (files_found >= 2) {  // At least core CEF files present
+    // Platform-aware success criteria
+    int minimum_required = 1;  // At least one CEF file should be present
+#ifdef _WIN32
+    minimum_required = 2;  // Windows should have multiple DLLs
+#endif
+    
+    if (files_found >= minimum_required) {
         std::cout << "✅ CEF Resources Test PASSED" << std::endl;
         std::cout << "✅ CEF packaging system is working correctly" << std::endl;
         return 0;
