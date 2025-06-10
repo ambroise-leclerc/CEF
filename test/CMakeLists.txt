@@ -25,33 +25,28 @@ endif()
 find_package(Threads REQUIRED)
 target_link_libraries(cef_sanity_test PRIVATE Threads::Threads)
 
-# Add the new borderless window test
-add_executable(cef_borderless_window_test cef_borderless_window_test.cpp)
+# Add the CEF resources test (simpler than borderless window test)
+add_executable(cef_resources_test cef_resources_test.cpp)
 
 # Set C++ standard
-set_property(TARGET cef_borderless_window_test PROPERTY CXX_STANDARD 17)
-set_property(TARGET cef_borderless_window_test PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET cef_resources_test PROPERTY CXX_STANDARD 17)
+set_property(TARGET cef_resources_test PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Add include directories for CEF headers
-target_include_directories(cef_borderless_window_test PRIVATE 
+target_include_directories(cef_resources_test PRIVATE 
     ${CEF_SOURCE_DIR}/include
     ${CEF_SOURCE_DIR}
 )
 
-# Link against the main CEF target which includes all necessary dependencies
-target_link_libraries(cef_borderless_window_test PRIVATE cef)
-
-# Link the CEF DLL wrapper library directly
-set(CEF_WRAPPER_LIB "${CMAKE_BINARY_DIR}/_deps/cef-build/libcef_dll_wrapper/Release/libcef_dll_wrapper.lib")
-if(EXISTS "${CEF_WRAPPER_LIB}")
-    target_link_libraries(cef_borderless_window_test PRIVATE "${CEF_WRAPPER_LIB}")
-    message(STATUS "Linking with CEF wrapper: ${CEF_WRAPPER_LIB}")
+# Link required libraries for filesystem operations
+if(WIN32)
+    target_link_libraries(cef_resources_test PRIVATE Threads::Threads)
 else()
-    message(STATUS "CEF wrapper not found at: ${CEF_WRAPPER_LIB}")
+    target_link_libraries(cef_resources_test PRIVATE Threads::Threads stdc++fs)
 endif()
 
-# Platform-specific system libraries
-target_link_libraries(cef_borderless_window_test PRIVATE Threads::Threads)
+# This test only needs CEF headers, not the wrapper library
+# No complex linking required - just basic filesystem operations
 
 # Platform-specific runtime setup
 if(APPLE)
@@ -83,32 +78,31 @@ if(APPLE)
         BUILD_WITH_INSTALL_RPATH TRUE
         INSTALL_RPATH "@executable_path/../Frameworks"
     )
-    
-    # macOS setup for borderless window test
-    add_custom_command(TARGET cef_borderless_window_test POST_BUILD
+      # macOS setup for resources test  
+    add_custom_command(TARGET cef_resources_test POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory
-        $<TARGET_FILE_DIR:cef_borderless_window_test>/../Frameworks
-        COMMENT "Creating Frameworks directory for borderless test"
+        $<TARGET_FILE_DIR:cef_resources_test>/../Frameworks
+        COMMENT "Creating Frameworks directory for resources test"
     )
     
-    add_custom_command(TARGET cef_borderless_window_test POST_BUILD
+    add_custom_command(TARGET cef_resources_test POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CEF_FRAMEWORK_PATH}"        "$<TARGET_FILE_DIR:cef_borderless_window_test>/../Frameworks/Chromium Embedded Framework.framework"
-        COMMENT "Copying CEF framework to borderless test Frameworks directory"
+        "${CEF_FRAMEWORK_PATH}"        "$<TARGET_FILE_DIR:cef_resources_test>/../Frameworks/Chromium Embedded Framework.framework"
+        COMMENT "Copying CEF framework to resources test Frameworks directory"
     )
     
-    # Copy CEF resources for borderless test if they exist
+    # Copy CEF resources for resources test if they exist
     if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
-        add_custom_command(TARGET cef_borderless_window_test POST_BUILD
+        add_custom_command(TARGET cef_resources_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${cef_binaries_SOURCE_DIR}/Resources"
-            $<TARGET_FILE_DIR:cef_borderless_window_test>/Resources
-            COMMENT "Copying CEF Resources for borderless test"
+            $<TARGET_FILE_DIR:cef_resources_test>/Resources
+            COMMENT "Copying CEF Resources for resources test"
         )
     endif()
     
-    # Set the correct RPATH for borderless test so the executable can find the framework
-    set_target_properties(cef_borderless_window_test PROPERTIES
+    # Set the correct RPATH for resources test so the executable can find the framework
+    set_target_properties(cef_resources_test PROPERTIES
         BUILD_WITH_INSTALL_RPATH TRUE
         INSTALL_RPATH "@executable_path/../Frameworks"
     )
@@ -148,38 +142,56 @@ elseif(WIN32)
             $<TARGET_FILE_DIR:cef_sanity_test>/Resources
             COMMENT "Copying CEF Resources"
         )
-    endif()
-    
-    # Copy DLLs and resources for the borderless window test
-    add_custom_command(TARGET cef_borderless_window_test POST_BUILD
+    endif()      # Copy DLLs and resources for the CEF resources test
+    add_custom_command(TARGET cef_resources_test POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CEF_LIBRARY_DIR}/libcef.dll"
-        $<TARGET_FILE_DIR:cef_borderless_window_test>
-        COMMENT "Copying CEF DLL to borderless test output directory"
+        $<TARGET_FILE_DIR:cef_resources_test>
+        COMMENT "Copying CEF DLL to resources test output directory"
     )
     
-    # Copy other required CEF DLLs for borderless test
+    # Also copy to the working directory for CTest
+    add_custom_command(TARGET cef_resources_test POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CEF_LIBRARY_DIR}/libcef.dll"
+        "${CMAKE_CURRENT_BINARY_DIR}"
+        COMMENT "Copying CEF DLL to test working directory"
+    )
+      # Copy other required CEF DLLs for resources test
     foreach(dll ${CEF_DLLS})
         if(EXISTS "${dll}")
-            add_custom_command(TARGET cef_borderless_window_test POST_BUILD
+            add_custom_command(TARGET cef_resources_test POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${dll}"
-                $<TARGET_FILE_DIR:cef_borderless_window_test>
-                COMMENT "Copying CEF support DLL to borderless test: ${dll}"
+                $<TARGET_FILE_DIR:cef_resources_test>
+                COMMENT "Copying CEF support DLL to resources test: ${dll}"
+            )
+            # Also copy to working directory for CTest
+            add_custom_command(TARGET cef_resources_test POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${dll}"
+                "${CMAKE_CURRENT_BINARY_DIR}"
+                COMMENT "Copying CEF support DLL to working directory: ${dll}"
             )
         endif()
     endforeach()
-    
-    # Copy CEF resources for borderless test
+      # Copy CEF resources for resources test
     if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
-        add_custom_command(TARGET cef_borderless_window_test POST_BUILD
+        add_custom_command(TARGET cef_resources_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${cef_binaries_SOURCE_DIR}/Resources"
-            $<TARGET_FILE_DIR:cef_borderless_window_test>/Resources
-            COMMENT "Copying CEF Resources for borderless test"
+            $<TARGET_FILE_DIR:cef_resources_test>/Resources
+            COMMENT "Copying CEF Resources for resources test"
+        )
+        # Also copy to working directory for CTest
+        add_custom_command(TARGET cef_resources_test POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${cef_binaries_SOURCE_DIR}/Resources"
+            "${CMAKE_CURRENT_BINARY_DIR}/Resources"
+            COMMENT "Copying CEF Resources to test working directory"
         )
     endif()
 endif()
 
 add_test(NAME cef_sanity_test COMMAND cef_sanity_test)
-add_test(NAME cef_borderless_window_test COMMAND cef_borderless_window_test)
+add_test(NAME cef_resources_test COMMAND cef_resources_test)
