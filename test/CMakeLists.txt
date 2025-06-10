@@ -38,6 +38,24 @@ target_include_directories(cef_resources_test PRIVATE
     ${CEF_SOURCE_DIR}
 )
 
+# Link required libraries for filesystem operations and threading
+target_link_libraries(cef_resources_test PRIVATE Threads::Threads)
+
+# Handle std::filesystem linking for different platforms
+if(APPLE)
+    # On macOS, std::filesystem is typically available without additional linking in modern Xcode
+    # But if linking fails, we might need to handle it differently
+    set_target_properties(cef_resources_test PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON
+    )
+elseif(UNIX)
+    # On Linux with GCC < 9, we need to link stdc++fs
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0")
+        target_link_libraries(cef_resources_test PRIVATE stdc++fs)
+    endif()
+endif()
+
 # Link required libraries for filesystem operations
 if(WIN32)
     target_link_libraries(cef_resources_test PRIVATE Threads::Threads)
