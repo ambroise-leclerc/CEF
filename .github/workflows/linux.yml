@@ -21,7 +21,7 @@ jobs:
       
       - name: Display build information
         run: |
-          echo "üêß Building CEF for Linux"
+          echo "Ì∞ß Building CEF for Linux"
           echo "Generator: Unix Makefiles (default)"
           echo "Architecture: $(uname -m)"
           echo "Linux version: $(lsb_release -d | cut -f2)"
@@ -41,11 +41,11 @@ jobs:
       - name: Configure
         run: cmake -B build -S . -DCEF_ROBUST_DOWNLOAD=ON
       
-      - name: Build
-        run: cmake --build build --config Release --target cef_sanity_test
+      - name: Build all tests
+        run: cmake --build build --config Release
       
-      - name: Run CEF sanity test
-        run: ./build/test/cef_sanity_test
+      - name: Run all CEF tests with CTest
+        run: cd build/test && ctest -C Release --verbose
       
       - name: Upload build artifacts
         if: always()
@@ -53,5 +53,5 @@ jobs:
         with:
           name: cef-build-linux-${{ github.sha }}
           path: |
-            build/test/cef_sanity_test
+            build/test/**/*test*
           retention-days: 7

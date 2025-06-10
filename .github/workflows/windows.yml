@@ -39,12 +39,12 @@ jobs:
         run: cmake -B build -S . -G "Visual Studio 17 2022" -DCEF_ROBUST_DOWNLOAD=ON
         shell: bash
       
-      - name: Build
-        run: cmake --build build --config Release --target cef_sanity_test
+      - name: Build all tests
+        run: cmake --build build --config Release
         shell: bash
       
-      - name: Run CEF sanity test
-        run: ./build/test/Release/cef_sanity_test.exe
+      - name: Run all CEF tests with CTest
+        run: cd build/test && ctest -C Release --verbose
         shell: bash
       
       - name: Upload build artifacts
@@ -53,5 +53,5 @@ jobs:
         with:
           name: cef-build-windows-${{ github.sha }}
           path: |
-            build/test/**/cef_sanity_test*
+            build/test/**/*test*
           retention-days: 7
