@@ -102,10 +102,48 @@ else()
     )
 endif()
 
-# Enable testing with CTest if CEF_TESTING is ON
-if(CEF_TESTING)
-    include(CTest)
-    add_test(NAME cef_sanity_test COMMAND cef_sanity_test)
-    add_test(NAME cef_resources_test COMMAND cef_resources_test)
-    add_test(NAME cef_window_test COMMAND cef_window_test)
+# Enable testing with CTest - use the standard BUILD_TESTING option
+include(CTest)
+
+# Always add tests when testing is enabled (which is the default)
+if(BUILD_TESTING)
+    # Add basic sanity test
+    add_test(NAME cef_sanity_test 
+             COMMAND cef_sanity_test
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    
+    # Add resources test
+    add_test(NAME cef_resources_test 
+             COMMAND cef_resources_test
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    
+    # Add window test with special handling for macOS app bundle
+    if(APPLE)
+        add_test(NAME cef_window_test 
+                 COMMAND ${CMAKE_CURRENT_BINARY_DIR}/cef_window_test.app/Contents/MacOS/cef_window_test
+                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    else()
+        add_test(NAME cef_window_test 
+                 COMMAND cef_window_test
+                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    endif()
+    
+    # Set test properties for better output and timeout handling
+    set_tests_properties(cef_sanity_test PROPERTIES
+        TIMEOUT 30
+        LABELS "basic;quick"
+    )
+    
+    set_tests_properties(cef_resources_test PROPERTIES
+        TIMEOUT 30
+        LABELS "basic;filesystem"
+    )
+    
+    set_tests_properties(cef_window_test PROPERTIES
+        TIMEOUT 60
+        LABELS "gui;integration"
+        ENVIRONMENT "DISPLAY=:0"  # For headless environments
+    )
+    
+    message(STATUS "CEF tests have been configured for CTest")
 endif()

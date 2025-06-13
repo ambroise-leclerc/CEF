@@ -241,6 +241,20 @@ int main(int argc, char* argv[]) {
     args.push_back("--disable-background-networking");
     args.push_back("--disable-features=PasswordManager");
     
+    // Additional switches to prevent keychain access
+    args.push_back("--disable-web-security");
+    args.push_back("--disable-features=VizDisplayCompositor");
+    args.push_back("--use-mock-keychain");
+    args.push_back("--disable-component-update");
+    args.push_back("--disable-default-apps");
+    args.push_back("--disable-extensions");
+    args.push_back("--disable-plugins");
+    args.push_back("--disable-translate");
+    args.push_back("--no-first-run");
+    args.push_back("--no-default-browser-check");
+    args.push_back("--disable-dev-shm-usage");
+    args.push_back("--disable-ipc-flooding-protection");
+    
     // Add switches to disable GPU acceleration to avoid GPU process issues
     args.push_back("--disable-gpu");
     args.push_back("--disable-gpu-sandbox");

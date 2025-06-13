@@ -41,4 +41,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(CEF_ENABLE_TESTS "Enable CEF tests" ON)
 option(CEF_WRAPPER_BUILD_SKIP "Skip building libcef_dll_wrapper" OFF) # Ensure wrapper is built
 
+# Enable testing by default
+option(BUILD_TESTING "Build the testing tree" ON)
+
 set(CMAKE_VERBOSE_MAKEFILE ON)
