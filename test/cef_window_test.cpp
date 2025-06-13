@@ -13,6 +13,7 @@
 #include "include/views/cef_browser_view.h"
 #include "include/views/cef_window.h"
 #include "include/wrapper/cef_helpers.h"
+#include "include/wrapper/cef_library_loader.h"  // Add this for CefScopedLibraryLoader
 #include "include/cef_task.h"  // For CefTask interface
 
 // Simple task wrapper to avoid complex binding
@@ -219,22 +220,56 @@ int main(int argc, char* argv[]) {
     std::cout << "Starting REAL CEF Window Test..." << std::endl;
     std::cout << "CEF Version: " << CEF_VERSION << std::endl;
 
-    CefMainArgs main_args(argc, argv);
+    // Load the CEF framework library at runtime instead of linking directly
+    // as required by the macOS sandbox implementation.
+    CefScopedLibraryLoader library_loader;
+    if (!library_loader.LoadInMain()) {
+        std::cerr << "❌ Failed to load CEF library" << std::endl;
+        return 1;
+    }
+
+    // Create a modified argument list with additional switches to prevent keychain access
+    std::vector<std::string> args;
+    for (int i = 0; i < argc; ++i) {
+        args.push_back(std::string(argv[i]));
+    }
+    
+    // Add switches to disable password storage features that trigger keychain access
+    args.push_back("--disable-password-generation");
+    args.push_back("--disable-password-manager-reauthentication");
+    args.push_back("--disable-sync");
+    args.push_back("--disable-background-networking");
+    args.push_back("--disable-features=PasswordManager");
+    
+    // Add switches to disable GPU acceleration to avoid GPU process issues
+    args.push_back("--disable-gpu");
+    args.push_back("--disable-gpu-sandbox");
+    args.push_back("--disable-software-rasterizer");
+    args.push_back("--disable-gpu-process-crash-limit");
+    
+    // Convert back to char* array
+    std::vector<char*> argv_modified;
+    for (auto& arg : args) {
+        argv_modified.push_back(&arg[0]);
+    }
+    argv_modified.push_back(nullptr);
+    
+    CefMainArgs main_args(static_cast<int>(argv_modified.size() - 1), argv_modified.data());
     CefRefPtr<RealWindowTestApp> app(new RealWindowTestApp);
 
-    // Handle sub-processes
-    int exit_code = CefExecuteProcess(main_args, app, nullptr);
-    if (exit_code >= 0) {
-        return exit_code;
-    }
+    // On macOS with proper app bundle and helper applications,
+    // we don't need to call CefExecuteProcess in the main process
+    // (it's handled by the helper applications)
 
     // CEF settings
     CefSettings settings;
     settings.multi_threaded_message_loop = false;
     settings.log_severity = LOGSEVERITY_WARNING;
     settings.no_sandbox = true;
+    
     CefString(&settings.locale) = "en-US";
     CefString(&settings.root_cache_path) = "/tmp/cef_real_window_test";
+    CefString(&settings.cache_path) = "/tmp/cef_real_window_test/cache";
 
     std::cout << "Initializing CEF for real window creation..." << std::endl;
     if (!CefInitialize(main_args, settings, app, nullptr)) {

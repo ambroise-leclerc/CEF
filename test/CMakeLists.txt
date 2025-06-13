@@ -61,10 +61,13 @@ add_executable(cef_window_test cef_window_test.cpp)
 set_property(TARGET cef_window_test PROPERTY CXX_STANDARD 17)
 set_property(TARGET cef_window_test PROPERTY CXX_STANDARD_REQUIRED ON)
 
-# Temporarily remove the restrictive CEF compilation flags to test
-# target_compile_options(cef_window_test PRIVATE -fno-exceptions -fno-rtti)
-
 if(APPLE)
+    # On macOS, build as an app bundle
+    set_target_properties(cef_window_test PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/../cmake/MacOSXBundleInfo.plist.in"
+    )
+    
     # On Apple, link cef, libcef_dll_wrapper, and Threads::Threads normally
     # Also add the CEF sandbox library which may contain missing symbols
     target_link_libraries(cef_window_test PRIVATE
@@ -78,7 +81,14 @@ if(APPLE)
     add_custom_command(TARGET cef_window_test POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "/Users/leclerc/dev/CEF/build/_deps/cef_binaries-src/Release/Chromium Embedded Framework.framework"
-            "$<TARGET_FILE_DIR:cef_window_test>/../Frameworks/Chromium Embedded Framework.framework"
+            "$<TARGET_BUNDLE_CONTENT_DIR:cef_window_test>/Frameworks/Chromium Embedded Framework.framework"
+        VERBATIM)
+        
+    # Copy CEF helper applications from cefsimple (which has all the required helpers)
+    add_custom_command(TARGET cef_window_test POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "/Users/leclerc/dev/CEF/build/libcef_dll_wrapper_build/tests/cefsimple/Release/cefsimple.app/Contents/Frameworks"
+            "$<TARGET_BUNDLE_CONTENT_DIR:cef_window_test>/Frameworks"
         VERBATIM)
 
     # Add linker flag for Objective-C code, typically required by CEF on macOS.
