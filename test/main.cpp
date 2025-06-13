@@ -6,7 +6,14 @@
 // Include necessary CEF headers
 #include "include/cef_version.h"
 #include "include/cef_app.h"
-#include "include/wrapper/cef_library_loader.h"
+
+// Platform-specific includes - cef_library_loader.h may not be available on all platforms
+#if defined(CEF_USE_SANDBOX) || defined(_WIN32) || defined(__APPLE__)
+    #include "include/wrapper/cef_library_loader.h"
+    #define HAS_CEF_LIBRARY_LOADER 1
+#else
+    #define HAS_CEF_LIBRARY_LOADER 0
+#endif
 
 // Utility function to add all switches that prevent keychain access
 std::vector<std::string> GetKeychainPreventionArgs(int argc, char* argv[]) {
@@ -52,6 +59,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Starting CEF Sanity Test..." << std::endl;
     
     // Test 1: CEF Library Loading (most important for keychain prevention)
+#if HAS_CEF_LIBRARY_LOADER
     CefScopedLibraryLoader library_loader;
     if (!library_loader.LoadInMain()) {
         std::cout << "⚠️  CEF library not loaded, testing headers only..." << std::endl;
@@ -83,6 +91,15 @@ int main(int argc, char* argv[]) {
         // The important thing is that we can load CEF and configure it without keychain prompts
         std::cout << "⚠️  Skipping full CEF initialization (not needed for keychain prevention test)" << std::endl;
     }
+#else
+    std::cout << "⚠️  CEF library loader not available on this platform, testing headers only..." << std::endl;
+    
+    // Test basic CEF structures without library loading
+    std::cout << "Testing CEF command line args..." << std::endl;
+    auto args = GetKeychainPreventionArgs(argc, argv);
+    std::cout << "✅ Keychain prevention args prepared: " << args.size() << " arguments" << std::endl;
+    std::cout << "✅ CEF headers are accessible without library loading" << std::endl;
+#endif
     
     // Test 3: CEF Version Information Access
     std::cout << "Testing CEF version information access..." << std::endl;
