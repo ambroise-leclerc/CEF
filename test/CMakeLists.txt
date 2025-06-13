@@ -42,224 +42,60 @@ target_include_directories(cef_resources_test PRIVATE
 target_link_libraries(cef_resources_test PRIVATE Threads::Threads)
 
 # Handle std::filesystem linking for different platforms
-if(APPLE)
-    # On macOS, std::filesystem is typically available without additional linking in modern Xcode
-    # But if linking fails, we might need to handle it differently
-    set_target_properties(cef_resources_test PROPERTIES
-        CXX_STANDARD 17
-        CXX_STANDARD_REQUIRED ON
-    )
-elseif(UNIX)
+if(UNIX AND NOT APPLE)
     # On Linux with GCC < 9, we need to link stdc++fs
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0")
         target_link_libraries(cef_resources_test PRIVATE stdc++fs)
     endif()
-endif()
-
-# Link required libraries for filesystem operations
-if(WIN32)
-    target_link_libraries(cef_resources_test PRIVATE Threads::Threads)
-else()
-    target_link_libraries(cef_resources_test PRIVATE Threads::Threads stdc++fs)
+elseif(WIN32)
+    # Windows doesn't need additional filesystem library linking
 endif()
 
 # This test only needs CEF headers, not the wrapper library
 # No complex linking required - just basic filesystem operations
 
-# Platform-specific runtime setup
+# Add the CEF window test (full CEF window functionality)
+add_executable(cef_window_test cef_window_test.cpp)
+
+# Set C++ standard
+set_property(TARGET cef_window_test PROPERTY CXX_STANDARD 17)
+set_property(TARGET cef_window_test PROPERTY CXX_STANDARD_REQUIRED ON)
+
+# Temporarily remove the restrictive CEF compilation flags to test
+# target_compile_options(cef_window_test PRIVATE -fno-exceptions -fno-rtti)
+
 if(APPLE)
-    # On macOS, copy the CEF framework to the correct location
-    # The framework needs to be in Frameworks/ relative to the executable
-    add_custom_command(TARGET cef_sanity_test POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory
-        $<TARGET_FILE_DIR:cef_sanity_test>/../Frameworks
-        COMMENT "Creating Frameworks directory"
+    # On Apple, link cef, libcef_dll_wrapper, and Threads::Threads normally
+    # Also add the CEF sandbox library which may contain missing symbols
+    target_link_libraries(cef_window_test PRIVATE
+        cef                 # Main CEF interface target
+        libcef_dll_wrapper  # CEF static wrapper library
+        Threads::Threads    # Threading support
+        /Users/leclerc/dev/CEF/build/_deps/cef_binaries-src/Release/cef_sandbox.a  # CEF sandbox library
     )
-    
-    add_custom_command(TARGET cef_sanity_test POST_BUILD
+
+    # On macOS, copy the CEF framework to the correct location within the app bundle
+    add_custom_command(TARGET cef_window_test POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CEF_FRAMEWORK_PATH}"        "$<TARGET_FILE_DIR:cef_sanity_test>/../Frameworks/Chromium Embedded Framework.framework"
-        COMMENT "Copying CEF framework to Frameworks directory"
+            "/Users/leclerc/dev/CEF/build/_deps/cef_binaries-src/Release/Chromium Embedded Framework.framework"
+            "$<TARGET_FILE_DIR:cef_window_test>/../Frameworks/Chromium Embedded Framework.framework"
+        VERBATIM)
+
+    # Add linker flag for Objective-C code, typically required by CEF on macOS.
+    target_link_options(cef_window_test PRIVATE "-ObjC")
+else()
+    # For other platforms, link cef, libcef_dll_wrapper, and Threads directly.
+    target_link_libraries(cef_window_test PRIVATE
+        cef                 # Main CEF interface target
+        libcef_dll_wrapper  # CEF static wrapper library
+        Threads::Threads    # Threading support
     )
-    
-    # Copy CEF resources if they exist
-    if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
-        add_custom_command(TARGET cef_sanity_test POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${cef_binaries_SOURCE_DIR}/Resources"
-            $<TARGET_FILE_DIR:cef_sanity_test>/Resources
-            COMMENT "Copying CEF Resources"
-        )
-    endif()
-      # Set the correct RPATH so the executable can find the framework
-    set_target_properties(cef_sanity_test PROPERTIES
-        BUILD_WITH_INSTALL_RPATH TRUE
-        INSTALL_RPATH "@executable_path/../Frameworks"
-    )
-      # macOS setup for resources test  
-    add_custom_command(TARGET cef_resources_test POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory
-        $<TARGET_FILE_DIR:cef_resources_test>/../Frameworks
-        COMMENT "Creating Frameworks directory for resources test"
-    )
-    
-    add_custom_command(TARGET cef_resources_test POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CEF_FRAMEWORK_PATH}"        "$<TARGET_FILE_DIR:cef_resources_test>/../Frameworks/Chromium Embedded Framework.framework"
-        COMMENT "Copying CEF framework to resources test Frameworks directory"
-    )
-    
-    # Copy CEF resources for resources test if they exist
-    if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
-        add_custom_command(TARGET cef_resources_test POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${cef_binaries_SOURCE_DIR}/Resources"
-            $<TARGET_FILE_DIR:cef_resources_test>/Resources
-            COMMENT "Copying CEF Resources for resources test"
-        )
-    endif()
-    
-    # Set the correct RPATH for resources test so the executable can find the framework
-    set_target_properties(cef_resources_test PROPERTIES
-        BUILD_WITH_INSTALL_RPATH TRUE
-        INSTALL_RPATH "@executable_path/../Frameworks"
-    )
-elseif(WIN32)
-    # On Windows, copy the CEF DLLs to the output directory for the test to run
-    add_custom_command(TARGET cef_sanity_test POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CEF_LIBRARY_DIR}/libcef.dll"
-        $<TARGET_FILE_DIR:cef_sanity_test>
-        COMMENT "Copying CEF DLL to output directory"
-    )
-    
-    # Copy other required CEF DLLs if they exist
-    set(CEF_DLLS 
-        "${CEF_LIBRARY_DIR}/chrome_elf.dll"
-        "${CEF_LIBRARY_DIR}/d3dcompiler_47.dll"
-        "${CEF_LIBRARY_DIR}/libEGL.dll"
-        "${CEF_LIBRARY_DIR}/libGLESv2.dll"
-        "${CEF_LIBRARY_DIR}/vk_swiftshader.dll"
-        "${CEF_LIBRARY_DIR}/vulkan-1.dll"
-    )
-    
-    foreach(dll ${CEF_DLLS})
-        if(EXISTS "${dll}")
-            add_custom_command(TARGET cef_sanity_test POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${dll}"
-                $<TARGET_FILE_DIR:cef_sanity_test>
-                COMMENT "Copying CEF support DLL: ${dll}"
-            )
-        endif()
-    endforeach()    # Copy CEF resources
-    if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
-        add_custom_command(TARGET cef_sanity_test POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${cef_binaries_SOURCE_DIR}/Resources"
-            $<TARGET_FILE_DIR:cef_sanity_test>/Resources
-            COMMENT "Copying CEF Resources"
-        )
-    endif()      # Copy DLLs and resources for the CEF resources test
-    add_custom_command(TARGET cef_resources_test POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CEF_LIBRARY_DIR}/libcef.dll"
-        $<TARGET_FILE_DIR:cef_resources_test>
-        COMMENT "Copying CEF DLL to resources test output directory"
-    )
-    
-    # Also copy to the working directory for CTest
-    add_custom_command(TARGET cef_resources_test POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CEF_LIBRARY_DIR}/libcef.dll"
-        "${CMAKE_CURRENT_BINARY_DIR}"
-        COMMENT "Copying CEF DLL to test working directory"
-    )
-      # Copy other required CEF DLLs for resources test
-    foreach(dll ${CEF_DLLS})
-        if(EXISTS "${dll}")
-            add_custom_command(TARGET cef_resources_test POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${dll}"
-                $<TARGET_FILE_DIR:cef_resources_test>
-                COMMENT "Copying CEF support DLL to resources test: ${dll}"
-            )
-            # Also copy to working directory for CTest
-            add_custom_command(TARGET cef_resources_test POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${dll}"
-                "${CMAKE_CURRENT_BINARY_DIR}"
-                COMMENT "Copying CEF support DLL to working directory: ${dll}"
-            )
-        endif()
-    endforeach()
-      # Copy CEF resources for resources test
-    if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
-        add_custom_command(TARGET cef_resources_test POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${cef_binaries_SOURCE_DIR}/Resources"
-            $<TARGET_FILE_DIR:cef_resources_test>/Resources
-            COMMENT "Copying CEF Resources for resources test"
-        )
-        # Also copy to working directory for CTest
-        add_custom_command(TARGET cef_resources_test POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${cef_binaries_SOURCE_DIR}/Resources"
-            "${CMAKE_CURRENT_BINARY_DIR}/Resources"
-            COMMENT "Copying CEF Resources to test working directory"        )
-    endif()
-elseif(UNIX AND NOT APPLE)  # Linux
-    # On Linux, copy the CEF shared libraries to the output directory for the test to run
-    add_custom_command(TARGET cef_sanity_test POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CEF_LIBRARY_DIR}/libcef.so"
-        $<TARGET_FILE_DIR:cef_sanity_test>
-        COMMENT "Copying CEF shared library to output directory"
-    )
-    
-    # Copy CEF resources for sanity test
-    if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
-        add_custom_command(TARGET cef_sanity_test POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${cef_binaries_SOURCE_DIR}/Resources"
-            $<TARGET_FILE_DIR:cef_sanity_test>/Resources
-            COMMENT "Copying CEF Resources"
-        )
-    endif()
-    
-    # Linux setup for resources test  
-    add_custom_command(TARGET cef_resources_test POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CEF_LIBRARY_DIR}/libcef.so"
-        $<TARGET_FILE_DIR:cef_resources_test>
-        COMMENT "Copying CEF shared library to resources test output directory"
-    )
-    
-    # Also copy to the working directory for CTest
-    add_custom_command(TARGET cef_resources_test POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CEF_LIBRARY_DIR}/libcef.so"
-        "${CMAKE_CURRENT_BINARY_DIR}"
-        COMMENT "Copying CEF shared library to test working directory"
-    )
-    
-    # Copy CEF resources for resources test
-    if(EXISTS "${cef_binaries_SOURCE_DIR}/Resources")
-        add_custom_command(TARGET cef_resources_test POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${cef_binaries_SOURCE_DIR}/Resources"
-            $<TARGET_FILE_DIR:cef_resources_test>/Resources
-            COMMENT "Copying CEF Resources for resources test"
-        )
-        # Also copy to working directory for CTest
-        add_custom_command(TARGET cef_resources_test POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${cef_binaries_SOURCE_DIR}/Resources"
-            "${CMAKE_CURRENT_BINARY_DIR}/Resources"
-            COMMENT "Copying CEF Resources to test working directory"
-        )
-    endif()
 endif()
 
-add_test(NAME cef_sanity_test COMMAND cef_sanity_test)
-add_test(NAME cef_resources_test COMMAND cef_resources_test)
+# Enable testing with CTest if CEF_TESTING is ON
+if(CEF_TESTING)
+    include(CTest)
+    add_test(NAME cef_sanity_test COMMAND cef_sanity_test)
+    add_test(NAME cef_resources_test COMMAND cef_resources_test)
+    add_test(NAME cef_window_test COMMAND cef_window_test)
+endif()

@@ -29,3 +29,16 @@ include(cmake/CEFTesting.cmake)
 
 # Setup installation
 include(cmake/CEFInstall.cmake)
+
+# Set the C++ standard to 17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Remove -v from CXX flags
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -v")
+
+# CEF options
+option(CEF_ENABLE_TESTS "Enable CEF tests" ON)
+option(CEF_WRAPPER_BUILD_SKIP "Skip building libcef_dll_wrapper" OFF) # Ensure wrapper is built
+
+set(CMAKE_VERBOSE_MAKEFILE ON)
