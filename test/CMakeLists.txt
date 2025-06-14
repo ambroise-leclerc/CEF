@@ -7,6 +7,11 @@ add_executable(cef_sanity_test cef_sanity_test.cpp)
 set_property(TARGET cef_sanity_test PROPERTY CXX_STANDARD 17)
 set_property(TARGET cef_sanity_test PROPERTY CXX_STANDARD_REQUIRED ON)
 
+# On Windows, ensure we use the same runtime library as CEF (static runtime)
+if(WIN32 AND MSVC)
+    set_property(TARGET cef_sanity_test PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 # Add include directories for CEF headers
 target_include_directories(cef_sanity_test PRIVATE 
     ${CEF_SOURCE_DIR}/include
@@ -43,6 +48,11 @@ add_executable(cef_resources_test cef_resources_test.cpp)
 set_property(TARGET cef_resources_test PROPERTY CXX_STANDARD 17)
 set_property(TARGET cef_resources_test PROPERTY CXX_STANDARD_REQUIRED ON)
 
+# On Windows, ensure we use the same runtime library as CEF (static runtime)
+if(WIN32 AND MSVC)
+    set_property(TARGET cef_resources_test PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 # Add include directories for CEF headers
 target_include_directories(cef_resources_test PRIVATE 
     ${CEF_SOURCE_DIR}/include
@@ -74,14 +84,39 @@ if(APPLE)
             "${CEF_SOURCE_DIR}/Release/Chromium Embedded Framework.framework"
             "${CMAKE_CURRENT_BINARY_DIR}/../Frameworks/Chromium Embedded Framework.framework"
         VERBATIM)
+elseif(WIN32)
+    # On Windows, copy CEF binaries and resources for the resources test to the test directory
+    add_custom_command(TARGET cef_resources_test POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CEF_SOURCE_DIR}/Release/libcef.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}/"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CEF_SOURCE_DIR}/Release/chrome_elf.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}/"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CEF_SOURCE_DIR}/Release/d3dcompiler_47.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}/"
+        VERBATIM)
+    
+    # Copy CEF resources directory for the resources test to the test directory
+    add_custom_command(TARGET cef_resources_test POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CEF_SOURCE_DIR}/Resources"
+            "${CMAKE_CURRENT_BINARY_DIR}/Resources"
+        VERBATIM)
 endif()
 
 # Add the CEF window test (full CEF window functionality)
 add_executable(cef_window_test cef_window_test.cpp)
 
-# Set C++ standard
+# Set C++ standard for window test
 set_property(TARGET cef_window_test PROPERTY CXX_STANDARD 17)
 set_property(TARGET cef_window_test PROPERTY CXX_STANDARD_REQUIRED ON)
+
+# On Windows, ensure we use the same runtime library as CEF (static runtime)
+if(WIN32 AND MSVC)
+    set_property(TARGET cef_window_test PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 if(APPLE)
     # On macOS, build as an app bundle
@@ -128,6 +163,54 @@ else()
         libcef_dll_wrapper  # CEF static wrapper library
         Threads::Threads    # Threading support
     )
+    
+    # On Windows, copy CEF binaries and resources to the test output directory
+    if(WIN32)
+        # Copy CEF DLLs
+        add_custom_command(TARGET cef_window_test POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/$<CONFIG>/libcef.dll"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/$<CONFIG>/chrome_elf.dll"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/$<CONFIG>/d3dcompiler_47.dll"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/$<CONFIG>/libEGL.dll"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/$<CONFIG>/libGLESv2.dll"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/$<CONFIG>/v8_context_snapshot.bin"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
+            VERBATIM)
+        
+        # Copy CEF resources
+        add_custom_command(TARGET cef_window_test POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/Resources/icudtl.dat"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/Resources/chrome_100_percent.pak"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/Resources/chrome_200_percent.pak"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/Resources/resources.pak"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
+            VERBATIM)
+        
+        # Copy locales directory
+        add_custom_command(TARGET cef_window_test POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CEF_SOURCE_DIR}/Resources/locales"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/locales"
+            VERBATIM)
+    endif()
 endif()
 
 # Enable testing with CTest - use the standard BUILD_TESTING option
