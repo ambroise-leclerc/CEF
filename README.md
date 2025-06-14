@@ -69,6 +69,72 @@ CPMAddPackage(
 - Includes a minimal sanity test to verify correct integration
 - Continuous Integration (CI) with GitHub Actions for reliability across all platforms
 
+## Tests
+
+This CEF packaging includes three comprehensive tests to validate proper integration and functionality:
+
+### 1. CEF Sanity Test (`cef_sanity_test`)
+**Purpose**: Validates basic CEF functionality and header accessibility
+- ✅ Tests CEF library loading on supported platforms
+- ✅ Verifies CEF headers are properly accessible
+- ✅ Retrieves and displays CEF version information (version, commit hash, Chrome version)
+- ✅ Configures basic CEF structures (CefMainArgs, CefSettings)
+- ✅ Validates cross-platform compatibility
+
+**Usage**: This is the primary test used in CI workflows to ensure the packaging works correctly.
+
+### 2. CEF Resources Test (`cef_resources_test`)
+**Purpose**: Validates CEF binary files and resources are properly deployed
+- ✅ Checks for platform-specific CEF binary files (libcef.dll, Chromium Embedded Framework.framework, libcef.so)
+- ✅ Verifies CEF resources directory and contents
+- ✅ Displays detailed CEF build information (commit hash, Chrome version)
+- ✅ Platform-aware validation (different requirements for Windows, macOS, Linux)
+- ✅ Ensures the packaging system correctly deploys all necessary files
+
+**Platform-specific files checked**:
+- **Windows**: `libcef.dll`, `chrome_elf.dll`, `d3dcompiler_47.dll`
+- **macOS**: `Chromium Embedded Framework.framework`
+- **Linux**: `libcef.so`, `chrome-sandbox`
+
+### 3. CEF Window Test (`cef_window_test`)
+**Purpose**: Creates and displays an actual visible CEF window to test full functionality
+- ✅ Creates a real, visible CEF browser window using CEF Views framework
+- ✅ Tests CEF initialization, context creation, and window lifecycle
+- ✅ Validates browser view creation and HTML content rendering
+- ✅ Demonstrates complete CEF integration with UI functionality
+- ✅ Auto-closes after 3 seconds to verify window management
+
+**Note**: This test creates an actual visible window that displays "🎉 REAL CEF WINDOW! 🎉" with CEF version information.
+
+### Running Tests
+
+**Build and run all tests:**
+```bash
+cmake -B build -S .
+cmake --build build --config Release
+```
+
+**Run individual tests:**
+```bash
+# Sanity test (used in CI)
+./build/test/cef_sanity_test
+
+# Resources validation test
+./build/test/cef_resources_test
+
+# Real window test (creates visible window)
+./build/test/cef_window_test
+```
+
+**Windows:**
+```bash
+./build/test/Release/cef_sanity_test.exe
+./build/test/Release/cef_resources_test.exe
+./build/test/Release/cef_window_test.exe
+```
+
+These tests ensure that the CEF packaging system works correctly across all supported platforms and that consumers can successfully integrate CEF into their applications.
+
 ## Platform Support
 
 This CEF packaging supports the following platforms:
@@ -248,26 +314,94 @@ CPMAddPackage(
 - Test de validation minimal pour garantir l'intégration
 - Intégration continue (CI) via GitHub Actions sur toutes les plateformes
 
+## Tests
+
+Ce packaging CEF comprend trois tests complets pour valider l'intégration et la fonctionnalité appropriées :
+
+### 1. Test de validation CEF (`cef_sanity_test`)
+**Objectif** : Valider la fonctionnalité de base de CEF et l'accessibilité des en-têtes
+- ✅ Teste le chargement de la bibliothèque CEF sur les plateformes prises en charge
+- ✅ Vérifie que les en-têtes CEF sont correctement accessibles
+- ✅ Récupère et affiche les informations de version de CEF (version, hash de commit, version de Chrome)
+- ✅ Configure les structures de base de CEF (CefMainArgs, CefSettings)
+- ✅ Valide la compatibilité multiplateforme
+
+**Utilisation** : Il s'agit du test principal utilisé dans les workflows CI pour garantir le bon fonctionnement du packaging.
+
+### 2. Test des ressources CEF (`cef_resources_test`)
+**Objectif** : Valider que les fichiers binaires et les ressources CEF sont correctement déployés
+- ✅ Vérifie la présence des fichiers binaires CEF spécifiques à la plateforme (libcef.dll, Chromium Embedded Framework.framework, libcef.so)
+- ✅ Vérifie le répertoire et le contenu des ressources CEF
+- ✅ Affiche des informations détaillées sur la construction de CEF (hash de commit, version de Chrome)
+- ✅ Validation consciente de la plateforme (exigences différentes pour Windows, macOS, Linux)
+- ✅ Assure que le système de packaging déploie correctement tous les fichiers nécessaires
+
+**Fichiers spécifiques à la plateforme vérifiés** :
+- **Windows** : `libcef.dll`, `chrome_elf.dll`, `d3dcompiler_47.dll`
+- **macOS** : `Chromium Embedded Framework.framework`
+- **Linux** : `libcef.so`, `chrome-sandbox`
+
+### 3. Test de la fenêtre CEF (`cef_window_test`)
+**Objectif** : Créer et afficher une véritable fenêtre CEF visible pour tester la fonctionnalité complète
+- ✅ Crée une véritable fenêtre de navigateur CEF visible en utilisant le framework CEF Views
+- ✅ Teste l'initialisation de CEF, la création de contexte et le cycle de vie de la fenêtre
+- ✅ Valide la création de la vue du navigateur et le rendu du contenu HTML
+- ✅ Démonstre l'intégration complète de CEF avec la fonctionnalité UI
+- ✅ Se ferme automatiquement après 3 secondes pour vérifier la gestion de la fenêtre
+
+**Remarque** : Ce test crée une fenêtre visible affichant "🎉 REAL CEF WINDOW! 🎉" avec des informations sur la version de CEF.
+
+### Exécution des tests
+
+**Compiler et exécuter tous les tests :**
+```bash
+cmake -B build -S .
+cmake --build build --config Release
+```
+
+**Exécuter des tests individuels :**
+```bash
+# Test de validation (utilisé dans CI)
+./build/test/cef_sanity_test
+
+# Test de validation des ressources
+./build/test/cef_resources_test
+
+# Test de la vraie fenêtre (crée une fenêtre visible)
+./build/test/cef_window_test
+```
+
+**Windows :**
+```bash
+./build/test/Release/cef_sanity_test.exe
+./build/test/Release/cef_resources_test.exe
+./build/test/Release/cef_window_test.exe
+```
+
+Ces tests garantissent que le système de packaging CEF fonctionne correctement sur toutes les plateformes prises en charge et que les utilisateurs peuvent intégrer CEF avec succès dans leurs applications.
+
 ## Plateformes supportées
-- **Linux (x64)** : `cef_binary_*_linux64.tar.bz2`
-- **Linux (ARM64)** : `cef_binary_*_linuxarm64.tar.bz2`
-- **macOS (x64)** : `cef_binary_*_macosx64.tar.bz2`
-- **macOS (ARM64)** : `cef_binary_*_macosarm64.tar.bz2`
-- **Windows (x64)** : `cef_binary_*_windows64.tar.bz2`
-- **Windows (ARM64)** : `cef_binary_*_windowsarm64.tar.bz2`
 
-## Prérequis de compilation
+Ce packaging CEF supporte les plateformes suivantes :
+- **Linux (x64)** : Utilise la distribution `cef_binary_*_linux64.tar.bz2`
+- **Linux (ARM64)** : Utilise la distribution `cef_binary_*_linuxarm64.tar.bz2`
+- **macOS (x64)** : Utilise la distribution `cef_binary_*_macosx64.tar.bz2`
+- **macOS (ARM64)** : Utilise la distribution `cef_binary_*_macosarm64.tar.bz2`
+- **Windows (x64)** : Utilise la distribution `cef_binary_*_windows64.tar.bz2`
+- **Windows (ARM64)** : Utilise la distribution `cef_binary_*_windowsarm64.tar.bz2`
 
-### Windows
+### Prérequis de compilation
+
+#### Windows
 - Visual Studio 2019 ou ultérieur (outils C++)
 - CMake 3.27 ou ultérieur
 - Windows 10 SDK
 
-### Linux
+#### Linux
 - GCC ou Clang
 - CMake 3.27 ou ultérieur
 
-### macOS
+#### macOS
 - Xcode ou Command Line Tools
 - CMake 3.27 ou ultérieur
 

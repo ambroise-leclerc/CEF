@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 project(cef_test LANGUAGES CXX)
 
-add_executable(cef_sanity_test main.cpp)
+add_executable(cef_sanity_test cef_sanity_test.cpp)
 
 # Set C++ standard for sanity test
 set_property(TARGET cef_sanity_test PROPERTY CXX_STANDARD 17)
