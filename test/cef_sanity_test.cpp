@@ -5,8 +5,8 @@
 #include "include/cef_version.h"
 #include "include/cef_app.h"
 
-// Platform-specific includes for library loader
-#if defined(CEF_USE_SANDBOX) || defined(_WIN32) || defined(__APPLE__)
+// Platform-specific includes for library loader (macOS only)
+#if defined(__APPLE__)
     #include "include/wrapper/cef_library_loader.h"
     #define HAS_CEF_LIBRARY_LOADER 1
 #else

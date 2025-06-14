@@ -4,6 +4,10 @@
 #include <list>
 #include <functional>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 // Include CEF headers for actual window creation
 #include "include/cef_app.h"
 #include "include/cef_browser.h"
@@ -13,8 +17,15 @@
 #include "include/views/cef_browser_view.h"
 #include "include/views/cef_window.h"
 #include "include/wrapper/cef_helpers.h"
-#include "include/wrapper/cef_library_loader.h"  // Add this for CefScopedLibraryLoader
 #include "include/cef_task.h"  // For CefTask interface
+
+// Platform-specific includes for library loader (macOS only)
+#if defined(__APPLE__)
+    #include "include/wrapper/cef_library_loader.h"
+    #define HAS_CEF_LIBRARY_LOADER 1
+#else
+    #define HAS_CEF_LIBRARY_LOADER 0
+#endif
 
 // Simple task wrapper to avoid complex binding
 class SimpleTask : public CefTask {
@@ -216,10 +227,10 @@ private:
     IMPLEMENT_REFCOUNTING(RealWindowTestApp);
 };
 
-int main(int argc, char* argv[]) {
-    std::cout << "Starting REAL CEF Window Test..." << std::endl;
+int main(int argc, char* argv[]) {    std::cout << "Starting REAL CEF Window Test..." << std::endl;
     std::cout << "CEF Version: " << CEF_VERSION << std::endl;
 
+#if HAS_CEF_LIBRARY_LOADER
     // Load the CEF framework library at runtime instead of linking directly
     // as required by the macOS sandbox implementation.
     CefScopedLibraryLoader library_loader;
@@ -227,6 +238,7 @@ int main(int argc, char* argv[]) {
         std::cerr << "❌ Failed to load CEF library" << std::endl;
         return 1;
     }
+#endif
 
     // Create a modified argument list with additional switches to prevent keychain access
     std::vector<std::string> args;
@@ -264,26 +276,32 @@ int main(int argc, char* argv[]) {
     // Convert back to char* array
     std::vector<char*> argv_modified;
     for (auto& arg : args) {
-        argv_modified.push_back(&arg[0]);
-    }
+        argv_modified.push_back(&arg[0]);    }
     argv_modified.push_back(nullptr);
     
+#ifdef _WIN32
+    CefMainArgs main_args(GetModuleHandle(nullptr));
+#else
     CefMainArgs main_args(static_cast<int>(argv_modified.size() - 1), argv_modified.data());
+#endif
     CefRefPtr<RealWindowTestApp> app(new RealWindowTestApp);
 
     // On macOS with proper app bundle and helper applications,
     // we don't need to call CefExecuteProcess in the main process
-    // (it's handled by the helper applications)
-
-    // CEF settings
+    // (it's handled by the helper applications)    // CEF settings
     CefSettings settings;
     settings.multi_threaded_message_loop = false;
     settings.log_severity = LOGSEVERITY_WARNING;
     settings.no_sandbox = true;
     
     CefString(&settings.locale) = "en-US";
+#ifdef _WIN32
+    CefString(&settings.root_cache_path) = "C:\\temp\\cef_real_window_test";
+    CefString(&settings.cache_path) = "C:\\temp\\cef_real_window_test\\cache";
+#else
     CefString(&settings.root_cache_path) = "/tmp/cef_real_window_test";
     CefString(&settings.cache_path) = "/tmp/cef_real_window_test/cache";
+#endif
 
     std::cout << "Initializing CEF for real window creation..." << std::endl;
     if (!CefInitialize(main_args, settings, app, nullptr)) {
