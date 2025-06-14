@@ -21,7 +21,7 @@ jobs:
       
       - name: Display build information
         run: |
-          echo "э╢ея╕П Building CEF for macOS"
+          echo "ЁЯЪА Building CEF for macOS"
           echo "Generator: Unix Makefiles (default)"
           echo "Architecture: $(uname -m)"
           echo "macOS version: $(sw_vers -productVersion)"
