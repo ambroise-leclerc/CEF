@@ -169,46 +169,46 @@ else()
         # Copy CEF DLLs
         add_custom_command(TARGET cef_window_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/Release/libcef.dll"
-                "${CMAKE_CURRENT_BINARY_DIR}/Release/"
+                "${CEF_SOURCE_DIR}/$<CONFIG>/libcef.dll"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/Release/chrome_elf.dll"
-                "${CMAKE_CURRENT_BINARY_DIR}/Release/"
+                "${CEF_SOURCE_DIR}/$<CONFIG>/chrome_elf.dll"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/Release/d3dcompiler_47.dll"
-                "${CMAKE_CURRENT_BINARY_DIR}/Release/"
+                "${CEF_SOURCE_DIR}/$<CONFIG>/d3dcompiler_47.dll"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/Release/libEGL.dll"
-                "${CMAKE_CURRENT_BINARY_DIR}/Release/"
+                "${CEF_SOURCE_DIR}/$<CONFIG>/libEGL.dll"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/Release/libGLESv2.dll"
-                "${CMAKE_CURRENT_BINARY_DIR}/Release/"
+                "${CEF_SOURCE_DIR}/$<CONFIG>/libGLESv2.dll"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/Release/v8_context_snapshot.bin"
-                "${CMAKE_CURRENT_BINARY_DIR}/Release/"
+                "${CEF_SOURCE_DIR}/$<CONFIG>/v8_context_snapshot.bin"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
             VERBATIM)
         
         # Copy CEF resources
         add_custom_command(TARGET cef_window_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CEF_SOURCE_DIR}/Resources/icudtl.dat"
-                "${CMAKE_CURRENT_BINARY_DIR}/Release/"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CEF_SOURCE_DIR}/Resources/chrome_100_percent.pak"
-                "${CMAKE_CURRENT_BINARY_DIR}/Release/"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CEF_SOURCE_DIR}/Resources/chrome_200_percent.pak"
-                "${CMAKE_CURRENT_BINARY_DIR}/Release/"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CEF_SOURCE_DIR}/Resources/resources.pak"
-                "${CMAKE_CURRENT_BINARY_DIR}/Release/"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
             VERBATIM)
         
         # Copy locales directory
         add_custom_command(TARGET cef_window_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
                 "${CEF_SOURCE_DIR}/Resources/locales"
-                "${CMAKE_CURRENT_BINARY_DIR}/Release/locales"
+                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/locales"
             VERBATIM)
     endif()
 endif()
