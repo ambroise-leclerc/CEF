@@ -25,6 +25,17 @@ endif()
 find_package(Threads REQUIRED)
 target_link_libraries(cef_sanity_test PRIVATE Threads::Threads)
 
+# On macOS, ensure the CEF framework is available for simple executables
+if(APPLE)
+    # Copy the CEF framework to the build directory so simple executables can find it
+    add_custom_command(TARGET cef_sanity_test POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/../Frameworks"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CEF_SOURCE_DIR}/Release/Chromium Embedded Framework.framework"
+            "${CMAKE_CURRENT_BINARY_DIR}/../Frameworks/Chromium Embedded Framework.framework"
+        VERBATIM)
+endif()
+
 # Add the CEF resources test (simpler than borderless window test)
 add_executable(cef_resources_test cef_resources_test.cpp)
 
@@ -53,6 +64,17 @@ endif()
 
 # This test only needs CEF headers, not the wrapper library
 # No complex linking required - just basic filesystem operations
+
+# On macOS, ensure the CEF framework is available for simple executables
+if(APPLE)
+    # Use the same framework copy as the sanity test
+    add_custom_command(TARGET cef_resources_test POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/../Frameworks"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CEF_SOURCE_DIR}/Release/Chromium Embedded Framework.framework"
+            "${CMAKE_CURRENT_BINARY_DIR}/../Frameworks/Chromium Embedded Framework.framework"
+        VERBATIM)
+endif()
 
 # Add the CEF window test (full CEF window functionality)
 add_executable(cef_window_test cef_window_test.cpp)
@@ -95,13 +117,6 @@ if(APPLE)
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CEF_SOURCE_DIR}/Release/Chromium Embedded Framework.framework"
             "$<TARGET_BUNDLE_CONTENT_DIR:cef_window_test>/Frameworks/Chromium Embedded Framework.framework"
-        VERBATIM)
-        
-    # Copy CEF helper applications from cefsimple (which has all the required helpers)
-    add_custom_command(TARGET cef_window_test POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_BINARY_DIR}/libcef_dll_wrapper_build/tests/cefsimple/Release/cefsimple.app/Contents/Frameworks"
-            "$<TARGET_BUNDLE_CONTENT_DIR:cef_window_test>/Frameworks"
         VERBATIM)
 
     # Add linker flag for Objective-C code, typically required by CEF on macOS.
