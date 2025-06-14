@@ -3,6 +3,7 @@
 #include <chrono>
 #include <list>
 #include <functional>
+#include <filesystem>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -217,6 +218,12 @@ public:
         // Create the top-level window that will contain the browser
         std::cout << "Creating top-level CEF window..." << std::endl;
         CefWindow::CreateTopLevelWindow(new RealWindowDelegate(browser_view));
+        
+        // Schedule a task to close the window after 3 seconds for headless testing
+        CefPostDelayedTask(TID_UI, new SimpleTask([handler]() {
+            std::cout << "⏰ Test timeout reached, closing window..." << std::endl;
+            handler->CloseAllBrowsers(true);
+        }), 3000);  // 3 seconds
     }
 
     CefRefPtr<CefClient> GetDefaultClient() override {
@@ -255,6 +262,7 @@ int main(int argc, char* argv[]) {    std::cout << "Starting REAL CEF Window Tes
     
     // Additional switches to prevent keychain access
     args.push_back("--disable-web-security");
+    args.push_back("--user-data-dir=/tmp/cef_window_test_user_data");  // Required when using --disable-web-security
     args.push_back("--disable-features=VizDisplayCompositor");
     args.push_back("--use-mock-keychain");
     args.push_back("--disable-component-update");
@@ -293,6 +301,11 @@ int main(int argc, char* argv[]) {    std::cout << "Starting REAL CEF Window Tes
     settings.multi_threaded_message_loop = false;
     settings.log_severity = LOGSEVERITY_WARNING;
     settings.no_sandbox = true;
+    
+    // Set resource directory paths for Linux using absolute paths
+    std::string current_dir = std::filesystem::current_path().string();
+    CefString(&settings.resources_dir_path) = current_dir;
+    CefString(&settings.locales_dir_path) = current_dir + "/locales";
     
     CefString(&settings.locale) = "en-US";
 #ifdef _WIN32
