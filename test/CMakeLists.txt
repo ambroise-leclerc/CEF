@@ -84,6 +84,26 @@ if(APPLE)
             "${CEF_SOURCE_DIR}/Release/Chromium Embedded Framework.framework"
             "${CMAKE_CURRENT_BINARY_DIR}/../Frameworks/Chromium Embedded Framework.framework"
         VERBATIM)
+elseif(WIN32)
+    # On Windows, copy CEF binaries and resources for the resources test to the test directory
+    add_custom_command(TARGET cef_resources_test POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CEF_SOURCE_DIR}/Release/libcef.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}/"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CEF_SOURCE_DIR}/Release/chrome_elf.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}/"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CEF_SOURCE_DIR}/Release/d3dcompiler_47.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}/"
+        VERBATIM)
+    
+    # Copy CEF resources directory for the resources test to the test directory
+    add_custom_command(TARGET cef_resources_test POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CEF_SOURCE_DIR}/Resources"
+            "${CMAKE_CURRENT_BINARY_DIR}/Resources"
+        VERBATIM)
 endif()
 
 # Add the CEF window test (full CEF window functionality)
