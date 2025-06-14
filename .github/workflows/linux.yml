@@ -21,7 +21,7 @@ jobs:
       
       - name: Display build information
         run: |
-          echo "í°§ Building CEF for Linux"
+          echo "Building CEF for Linux"
           echo "Generator: Unix Makefiles (default)"
           echo "Architecture: $(uname -m)"
           echo "Linux version: $(lsb_release -d | cut -f2)"
