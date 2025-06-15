@@ -279,13 +279,15 @@ if(BUILD_TESTING)
     # Add resources test
     add_test(NAME cef_resources_test 
              COMMAND cef_resources_test
-             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-    
-    # Add window test with special handling for macOS app bundle
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})    # Add window test with special handling for macOS app bundle
     if(APPLE)
         add_test(NAME cef_window_test 
                  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/cef_window_test.app/Contents/MacOS/cef_window_test
                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    elseif(WIN32)
+        add_test(NAME cef_window_test 
+                 COMMAND cef_window_test
+                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Release)
     else()
         add_test(NAME cef_window_test 
                  COMMAND cef_window_test
