@@ -236,6 +236,9 @@ else()
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${CEF_SOURCE_DIR}/Release/chrome-sandbox"
                 "${CMAKE_CURRENT_BINARY_DIR}/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/Release/v8_context_snapshot.bin"
+                "${CMAKE_CURRENT_BINARY_DIR}/"
             VERBATIM)
         
         # Copy CEF resources
@@ -300,16 +303,19 @@ if(BUILD_TESTING)
         LABELS "basic;filesystem"
     )
     
-    set_tests_properties(cef_window_test PROPERTIES
-        TIMEOUT 60
-        LABELS "gui;integration"
-        ENVIRONMENT "DISPLAY=:0"  # For headless environments
-    )
-    
-    # Add Linux-specific environment variables for CEF tests
+    # Set platform-specific test properties for cef_window_test
     if(UNIX AND NOT APPLE)
+        # Linux: Set up environment for headless X11 testing
         set_tests_properties(cef_window_test PROPERTIES
-            ENVIRONMENT "DISPLAY=:0;CEF_DISABLE_SANDBOX=1;LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+            TIMEOUT 60
+            LABELS "gui;integration"
+            ENVIRONMENT "DISPLAY=:99;CEF_DISABLE_SANDBOX=1;LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+        )
+    else()
+        # Windows/other platforms: Basic configuration without X11 variables
+        set_tests_properties(cef_window_test PROPERTIES
+            TIMEOUT 60
+            LABELS "gui;integration"
         )
     endif()
     
