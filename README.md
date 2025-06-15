@@ -16,7 +16,7 @@ This repository provides a packaging solution for the Chromium Embedded Framewor
 To use this CEF package in your own CMake project, simply add the following line to your `CMakeLists.txt`:
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.4")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17")
 # Link CEF to your application target (replace my_app with your target name)
 target_link_libraries(my_app PRIVATE cef)
 ```
@@ -162,7 +162,7 @@ This CEF packaging supports the following platforms:
 
 The platform is automatically detected during the CMake configuration phase, and the appropriate CEF binary distribution is downloaded and configured.
 
-**Current CEF Version**: 137.0.4+g8614a8d+chromium-137.0.7151.6
+**Current CEF Version**: 137.0.17+g8614a8d+chromium-137.0.7151.6
 
 This version is chosen for its stability and cross-platform availability. If you need a different CEF version, you can modify the `CEF_VERSION` variable in the main `CMakeLists.txt` file, but ensure that the version you choose has builds available for all platforms you intend to support.
 
@@ -261,7 +261,7 @@ Ce dépôt propose une solution de packaging automatisée pour Chromium Embedded
 Pour intégrer ce package CEF à votre projet CMake, ajoutez simplement la ligne suivante à votre `CMakeLists.txt` :
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.4")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17")
 # Liez CEF à votre cible applicative (remplacez my_app par le nom de votre cible)
 target_link_libraries(my_app PRIVATE cef)
 ```
