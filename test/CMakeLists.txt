@@ -104,6 +104,23 @@ elseif(WIN32)
             "${CEF_SOURCE_DIR}/Resources"
             "${CMAKE_CURRENT_BINARY_DIR}/Resources"
         VERBATIM)
+elseif(UNIX AND NOT APPLE)
+    # On Linux, copy CEF binaries and resources for the resources test to the test directory
+    add_custom_command(TARGET cef_resources_test POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CEF_SOURCE_DIR}/Release/libcef.so"
+            "${CMAKE_CURRENT_BINARY_DIR}/"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CEF_SOURCE_DIR}/Release/chrome-sandbox"
+            "${CMAKE_CURRENT_BINARY_DIR}/"
+        VERBATIM)
+    
+    # Copy CEF resources directory if it exists
+    add_custom_command(TARGET cef_resources_test POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CEF_SOURCE_DIR}/Resources"
+            "${CMAKE_CURRENT_BINARY_DIR}/Resources"
+        VERBATIM)
 endif()
 
 # Add the CEF window test (full CEF window functionality)
@@ -210,6 +227,42 @@ else()
                 "${CEF_SOURCE_DIR}/Resources/locales"
                 "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/locales"
             VERBATIM)
+    elseif(UNIX AND NOT APPLE)
+        # On Linux, copy CEF binaries and resources for the window test
+        add_custom_command(TARGET cef_window_test POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/Release/libcef.so"
+                "${CMAKE_CURRENT_BINARY_DIR}/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/Release/chrome-sandbox"
+                "${CMAKE_CURRENT_BINARY_DIR}/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/Release/v8_context_snapshot.bin"
+                "${CMAKE_CURRENT_BINARY_DIR}/"
+            VERBATIM)
+        
+        # Copy CEF resources
+        add_custom_command(TARGET cef_window_test POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/Resources/icudtl.dat"
+                "${CMAKE_CURRENT_BINARY_DIR}/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/Resources/chrome_100_percent.pak"
+                "${CMAKE_CURRENT_BINARY_DIR}/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/Resources/chrome_200_percent.pak"
+                "${CMAKE_CURRENT_BINARY_DIR}/"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CEF_SOURCE_DIR}/Resources/resources.pak"
+                "${CMAKE_CURRENT_BINARY_DIR}/"
+            VERBATIM)
+        
+        # Copy locales directory
+        add_custom_command(TARGET cef_window_test POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CEF_SOURCE_DIR}/Resources/locales"
+                "${CMAKE_CURRENT_BINARY_DIR}/locales"
+            VERBATIM)
     endif()
 endif()
 
@@ -226,13 +279,15 @@ if(BUILD_TESTING)
     # Add resources test
     add_test(NAME cef_resources_test 
              COMMAND cef_resources_test
-             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-    
-    # Add window test with special handling for macOS app bundle
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})    # Add window test with special handling for macOS app bundle
     if(APPLE)
         add_test(NAME cef_window_test 
                  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/cef_window_test.app/Contents/MacOS/cef_window_test
                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    elseif(WIN32)
+        add_test(NAME cef_window_test 
+                 COMMAND cef_window_test
+                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Release)
     else()
         add_test(NAME cef_window_test 
                  COMMAND cef_window_test
@@ -250,11 +305,21 @@ if(BUILD_TESTING)
         LABELS "basic;filesystem"
     )
     
-    set_tests_properties(cef_window_test PROPERTIES
-        TIMEOUT 60
-        LABELS "gui;integration"
-        ENVIRONMENT "DISPLAY=:0"  # For headless environments
-    )
+    # Set platform-specific test properties for cef_window_test
+    if(UNIX AND NOT APPLE)
+        # Linux: Set up environment for headless X11 testing
+        set_tests_properties(cef_window_test PROPERTIES
+            TIMEOUT 60
+            LABELS "gui;integration"
+            ENVIRONMENT "DISPLAY=:99;CEF_DISABLE_SANDBOX=1;LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+        )
+    else()
+        # Windows/other platforms: Basic configuration without X11 variables
+        set_tests_properties(cef_window_test PROPERTIES
+            TIMEOUT 60
+            LABELS "gui;integration"
+        )
+    endif()
     
     message(STATUS "CEF tests have been configured for CTest")
 endif()
