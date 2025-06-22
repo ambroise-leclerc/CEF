@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(CEF LANGUAGES CXX)
+project(CEF LANGUAGES C CXX)
 
 # Set CEF version
 set(CEF_VERSION "137.0.17+gf354b0e+chromium-137.0.7151.104")
