@@ -16,7 +16,7 @@ This repository provides a packaging solution for the Chromium Embedded Framewor
 To use this CEF package in your own CMake project, simply add the following line to your `CMakeLists.txt`:
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
 # Link CEF to your application target (replace my_app with your target name)
 target_link_libraries(my_app PRIVATE 
     CEF::cef                    # Main CEF interface
@@ -47,7 +47,7 @@ cmake_minimum_required(VERSION 3.15)
 project(my_cef_app LANGUAGES CXX)
 
 # Add the CEF package
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
 
 # Create your executable
 add_executable(my_cef_app main.cpp)
@@ -201,7 +201,7 @@ You can use the non-compact CPM.cmake notation to set CEF options such as `CEF_R
 CPMAddPackage(
   NAME cef
   GITHUB_REPOSITORY ambroise-leclerc/CEF
-  VERSION 137.0.17
+  VERSION 137.0.17b
   OPTIONS
     "CEF_ROBUST_DOWNLOAD ON"         # Enables robust download with retries and fallbacks (default: ON)
     "CEF_USE_MINIMAL_DIST ON"        # Download the minimal CEF distribution instead of the full one (default: OFF)
@@ -417,7 +417,7 @@ Ce dépôt propose une solution de packaging automatisée pour Chromium Embedded
 Pour intégrer ce package CEF à votre projet CMake, ajoutez simplement la ligne suivante à votre `CMakeLists.txt` :
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
 # Liez CEF à votre cible applicative (remplacez my_app par le nom de votre cible)
 target_link_libraries(my_app PRIVATE 
     CEF::cef                    # Interface CEF principale
@@ -448,7 +448,7 @@ cmake_minimum_required(VERSION 3.15)
 project(my_cef_app LANGUAGES CXX)
 
 # Ajouter le package CEF
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
 
 # Créer votre exécutable
 add_executable(my_cef_app main.cpp)
@@ -529,7 +529,7 @@ Vous pouvez utiliser la notation CPM.cmake non compacte pour définir des option
 CPMAddPackage(
   NAME cef
   GITHUB_REPOSITORY ambroise-leclerc/CEF
-  VERSION 137.0.17
+  VERSION 137.0.17b
   OPTIONS
     "CEF_ROBUST_DOWNLOAD ON"         # Active le téléchargement robuste avec réessais et solutions de repli (par défaut : ON)
     "CEF_USE_MINIMAL_DIST ON"        # Télécharge la distribution minimale de CEF au lieu de la version complète (par défaut : OFF)

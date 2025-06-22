@@ -11,7 +11,7 @@ cmake_minimum_required(VERSION 3.15)
 project(my_cef_app LANGUAGES CXX)
 
 # Add the CEF package
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
 
 # Create your executable
 add_executable(my_cef_app main.cpp)
