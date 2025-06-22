@@ -16,12 +16,162 @@ This repository provides a packaging solution for the Chromium Embedded Framewor
 To use this CEF package in your own CMake project, simply add the following line to your `CMakeLists.txt`:
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
 # Link CEF to your application target (replace my_app with your target name)
-target_link_libraries(my_app PRIVATE cef)
+target_link_libraries(my_app PRIVATE 
+    CEF::cef                    # Main CEF interface
+    CEF::libcef_dll_wrapper     # CEF C++ wrapper library (for building CEF applications)
+)
 ```
 
-This will automatically download, configure, and build CEF as part of your project, ensuring all dependencies and minimal tests are handled as defined in this repository.
+This will automatically download, configure, and build CEF as part of your project, ensuring all dependencies and tests are handled as defined in this repository.
+
+**Note:** The package now exports both `CEF::cef` and `CEF::libcef_dll_wrapper` targets. The wrapper library is essential for building CEF applications in C++.
+
+## Building CEF Window Applications
+
+✅ **What's Available:**
+- **`CEF::cef`** - Main CEF interface library
+- **`CEF::libcef_dll_wrapper`** - C++ wrapper library (essential for CEF applications)
+- Complete CEF headers including wrapper utilities (`CefRefPtr<>`, `IMPLEMENT_REFCOUNTING()`, etc.)
+- Cross-platform support (Windows, macOS, Linux)
+
+This package exports both targets needed to build CEF applications like the included `cef_window_test.cpp`.
+
+### Quick Start for CEF Applications
+
+Create a CEF window application with these simple steps:
+
+```cmake
+cmake_minimum_required(VERSION 3.15)
+project(my_cef_app LANGUAGES CXX)
+
+# Add the CEF package
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
+
+# Create your executable
+add_executable(my_cef_app main.cpp)
+
+# Set C++ standard (CEF requires C++17)
+set_property(TARGET my_cef_app PROPERTY CXX_STANDARD 17)
+set_property(TARGET my_cef_app PROPERTY CXX_STANDARD_REQUIRED ON)
+
+# Link CEF libraries - BOTH targets are required
+target_link_libraries(my_cef_app PRIVATE 
+    CEF::cef                    # Main CEF interface
+    CEF::libcef_dll_wrapper     # C++ wrapper library (provides CefRefPtr, etc.)
+    Threads::Threads            # Threading support
+)
+
+# Platform-specific configuration
+if(WIN32 AND MSVC)
+    # Use static runtime to match CEF
+    set_property(TARGET my_cef_app PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+```
+
+### Exported Targets
+
+The package exports:
+- **CEF::cef** - Main CEF interface library
+- **CEF::libcef_dll_wrapper** - CEF C++ wrapper library (essential for C++ applications)
+
+### Application Code Structure
+
+Your application should include and use:
+
+```cpp
+// Essential CEF headers
+#include "include/cef_app.h"
+#include "include/cef_browser.h" 
+#include "include/cef_client.h"
+#include "include/views/cef_browser_view.h"
+#include "include/views/cef_window.h"
+#include "include/wrapper/cef_helpers.h"  // From libcef_dll_wrapper
+
+// Platform-specific includes
+#if defined(__APPLE__)
+    #include "include/wrapper/cef_library_loader.h"
+#endif
+
+// Use wrapper functionality
+CefRefPtr<CefApp> app(new MyApp);  // CefRefPtr from wrapper
+IMPLEMENT_REFCOUNTING(MyClass);    // Macro from wrapper
+
+// CEF lifecycle
+CefInitialize(main_args, settings, app, nullptr);
+CefRunMessageLoop();
+CefShutdown();
+```
+
+**Note:** The `libcef_dll_wrapper` provides essential C++ utilities like `CefRefPtr<>` for automatic memory management and `IMPLEMENT_REFCOUNTING()` macros that are required for CEF applications.
+
+### Platform-Specific Setup
+
+#### Windows
+```cmake
+if(WIN32)
+    # Copy required CEF DLLs
+    add_custom_command(TARGET my_cef_app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CEF_SOURCE_DIR}/$<CONFIG>/libcef.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CEF_SOURCE_DIR}/$<CONFIG>/chrome_elf.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
+        # Add other required DLLs as needed
+    )
+    
+    # Copy CEF resources
+    add_custom_command(TARGET my_cef_app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CEF_SOURCE_DIR}/Resources"
+            "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/Resources"
+    )
+endif()
+```
+
+#### macOS
+```cmake
+if(APPLE)
+    # Build as app bundle
+    set_target_properties(my_cef_app PROPERTIES MACOSX_BUNDLE TRUE)
+    
+    # Copy CEF framework
+    add_custom_command(TARGET my_cef_app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CEF_SOURCE_DIR}/Release/Chromium Embedded Framework.framework"
+            "$<TARGET_BUNDLE_CONTENT_DIR:my_cef_app>/Frameworks/Chromium Embedded Framework.framework"
+    )
+endif()
+```
+
+#### Linux
+```cmake
+if(UNIX AND NOT APPLE)
+    # Copy CEF shared library
+    add_custom_command(TARGET my_cef_app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CEF_SOURCE_DIR}/Release/libcef.so"
+            "${CMAKE_CURRENT_BINARY_DIR}/"
+    )
+    
+    # Copy resources
+    add_custom_command(TARGET my_cef_app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CEF_SOURCE_DIR}/Resources"
+            "${CMAKE_CURRENT_BINARY_DIR}/Resources"
+    )
+endif()
+```
+
+### Complete Example
+
+See the working `cef_window_test.cpp` in this repository for a complete, functional example of:
+- CEF initialization
+- Window creation using CEF Views framework
+- Browser lifecycle management
+- Platform-specific considerations
 
 ### Without CPM.cmake
 If you do not use CPM.cmake, you may include this repository as a subdirectory or use CMake's FetchContent module:
@@ -51,7 +201,7 @@ You can use the non-compact CPM.cmake notation to set CEF options such as `CEF_R
 CPMAddPackage(
   NAME cef
   GITHUB_REPOSITORY ambroise-leclerc/CEF
-  VERSION 137.0.4
+  VERSION 137.0.17b
   OPTIONS
     "CEF_ROBUST_DOWNLOAD ON"         # Enables robust download with retries and fallbacks (default: ON)
     "CEF_USE_MINIMAL_DIST ON"        # Download the minimal CEF distribution instead of the full one (default: OFF)
@@ -64,9 +214,15 @@ CPMAddPackage(
 - `CEF_USE_MINIMAL_DIST`: If ON, downloads the smaller _minimal CEF distribution. If OFF (default), downloads the full CEF package (includes more resources and tools).
 
 ## Features
+- ✅ **Exports `libcef_dll_wrapper`** - Now available for building CEF applications
+- ✅ **Cross-platform support** - Windows, macOS, Linux (x64 and ARM64)
+- ✅ **Automatic CEF download** - Handles platform-specific binaries
+- ✅ **Complete headers** - All CEF headers installed and accessible
+- ✅ **CMake integration** - Easy to use with modern CMake and CPM.cmake
+- ✅ **Window application support** - Everything needed to build CEF window applications
 - Provides a reproducible and automated packaging of CEF for Linux, macOS, and Windows
 - Integrates with CMake and CPM.cmake for easy consumption
-- Includes a minimal sanity test to verify correct integration
+- Includes comprehensive tests to verify correct integration and functionality
 - Continuous Integration (CI) with GitHub Actions for reliability across all platforms
 
 ## Tests
@@ -261,12 +417,89 @@ Ce dépôt propose une solution de packaging automatisée pour Chromium Embedded
 Pour intégrer ce package CEF à votre projet CMake, ajoutez simplement la ligne suivante à votre `CMakeLists.txt` :
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
 # Liez CEF à votre cible applicative (remplacez my_app par le nom de votre cible)
-target_link_libraries(my_app PRIVATE cef)
+target_link_libraries(my_app PRIVATE 
+    CEF::cef                    # Interface CEF principale
+    CEF::libcef_dll_wrapper     # Bibliothèque wrapper C++ (pour les applications CEF)
+)
 ```
 
 Cette commande télécharge, configure et compile automatiquement CEF, en assurant la gestion des dépendances et l'exécution des tests de validation.
+
+**Note :** Le package exporte désormais les cibles `CEF::cef` et `CEF::libcef_dll_wrapper`. La bibliothèque wrapper est essentielle pour construire des applications CEF en C++.
+
+## Construction d'Applications CEF avec Fenêtres
+
+✅ **Ce qui est disponible :**
+- **`CEF::cef`** - Bibliothèque interface CEF principale  
+- **`CEF::libcef_dll_wrapper`** - Bibliothèque wrapper C++ (essentielle pour les applications CEF)
+- En-têtes CEF complets incluant les utilitaires wrapper (`CefRefPtr<>`, `IMPLEMENT_REFCOUNTING()`, etc.)
+- Support multi-plateforme (Windows, macOS, Linux)
+
+Ce package exporte les deux cibles nécessaires pour construire des applications CEF comme le `cef_window_test.cpp` inclus.
+
+### Démarrage rapide pour les applications CEF
+
+Créez une application CEF avec fenêtre avec ces étapes simples :
+
+```cmake
+cmake_minimum_required(VERSION 3.15)
+project(my_cef_app LANGUAGES CXX)
+
+# Ajouter le package CEF
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
+
+# Créer votre exécutable
+add_executable(my_cef_app main.cpp)
+
+# Définir le standard C++ (CEF nécessite C++17)
+set_property(TARGET my_cef_app PROPERTY CXX_STANDARD 17)
+set_property(TARGET my_cef_app PROPERTY CXX_STANDARD_REQUIRED ON)
+
+# Lier les bibliothèques CEF - LES DEUX cibles sont requises
+target_link_libraries(my_cef_app PRIVATE 
+    CEF::cef                    # Interface CEF principale
+    CEF::libcef_dll_wrapper     # Bibliothèque wrapper C++ (fournit CefRefPtr, etc.)
+    Threads::Threads            # Support threading
+)
+
+# Configuration spécifique à la plateforme
+if(WIN32 AND MSVC)
+    # Utiliser le runtime statique pour correspondre à CEF
+    set_property(TARGET my_cef_app PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+```
+
+### Structure du code d'application
+
+Votre application doit inclure et utiliser :
+
+```cpp
+// En-têtes CEF essentiels
+#include "include/cef_app.h"
+#include "include/cef_browser.h" 
+#include "include/cef_client.h"
+#include "include/views/cef_browser_view.h"
+#include "include/views/cef_window.h"
+#include "include/wrapper/cef_helpers.h"  // Du libcef_dll_wrapper
+
+// Includes spécifiques à la plateforme
+#if defined(__APPLE__)
+    #include "include/wrapper/cef_library_loader.h"
+#endif
+
+// Utiliser les fonctionnalités wrapper
+CefRefPtr<CefApp> app(new MyApp);  // CefRefPtr du wrapper
+IMPLEMENT_REFCOUNTING(MyClass);    // Macro du wrapper
+
+// Cycle de vie CEF
+CefInitialize(main_args, settings, app, nullptr);
+CefRunMessageLoop();
+CefShutdown();
+```
+
+**Note :** Le `libcef_dll_wrapper` fournit des utilitaires C++ essentiels comme `CefRefPtr<>` pour la gestion automatique de la mémoire et les macros `IMPLEMENT_REFCOUNTING()` qui sont requises pour les applications CEF.
 
 ### Sans CPM.cmake
 Vous pouvez également inclure ce dépôt comme sous-répertoire ou utiliser le module FetchContent de CMake :
@@ -296,7 +529,7 @@ Vous pouvez utiliser la notation CPM.cmake non compacte pour définir des option
 CPMAddPackage(
   NAME cef
   GITHUB_REPOSITORY ambroise-leclerc/CEF
-  VERSION 137.0.4
+  VERSION 137.0.17b
   OPTIONS
     "CEF_ROBUST_DOWNLOAD ON"         # Active le téléchargement robuste avec réessais et solutions de repli (par défaut : ON)
     "CEF_USE_MINIMAL_DIST ON"        # Télécharge la distribution minimale de CEF au lieu de la version complète (par défaut : OFF)
@@ -309,9 +542,15 @@ CPMAddPackage(
 - `CEF_USE_MINIMAL_DIST` : Si activé, télécharge la plus petite _distribution minimale de CEF. Si désactivé (par défaut), télécharge le package complet de CEF (inclut plus de ressources et d'outils).
 
 ## Fonctionnalités
+- ✅ **Exporte `libcef_dll_wrapper`** - Maintenant disponible pour construire des applications CEF
+- ✅ **Support multi-plateforme** - Windows, macOS, Linux (x64 et ARM64)
+- ✅ **Téléchargement automatique de CEF** - Gère les binaires spécifiques à la plateforme
+- ✅ **En-têtes complets** - Tous les en-têtes CEF installés et accessibles
+- ✅ **Intégration CMake** - Facile à utiliser avec CMake moderne et CPM.cmake
+- ✅ **Support d'applications avec fenêtres** - Tout ce qui est nécessaire pour construire des applications CEF avec fenêtres
 - Packaging reproductible et automatisé de CEF pour Linux, macOS et Windows
 - Intégration transparente avec CMake et CPM.cmake
-- Test de validation minimal pour garantir l'intégration
+- Inclut des tests complets pour vérifier l'intégration correcte et la fonctionnalité
 - Intégration continue (CI) via GitHub Actions sur toutes les plateformes
 
 ## Tests
