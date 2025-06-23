@@ -10,13 +10,16 @@ if(NOT CEF_WRAPPER_BUILD_SKIP)
   set(CEF_WRAPPER_BINARY_SUBDIR "libcef_dll_wrapper_build")
 
   message(STATUS "Configuring libcef_dll_wrapper build (Source: ${CEF_WRAPPER_SOURCE_DIR}, Binary SubDir: ${CEF_WRAPPER_BINARY_SUBDIR})")
-
   # Set up CEF environment variables for building the wrapper
   set(CEF_ROOT "${CEF_WRAPPER_SOURCE_DIR}")
+  set(_CEF_ROOT "${CEF_ROOT}")
+  set(_CEF_ROOT_EXPLICIT 1)
   
-  # Use find_package to properly load CEF macros and variables
+  # Directly include CEF variables and macros to avoid circular dependency
+  # Instead of find_package(CEF REQUIRED) which would cause issues
   list(APPEND CMAKE_MODULE_PATH "${CEF_ROOT}/cmake")
-  find_package(CEF REQUIRED)
+  include("${CEF_ROOT}/cmake/cef_variables.cmake")
+  include("${CEF_ROOT}/cmake/cef_macros.cmake")
 
   # Add the subdirectory that builds libcef_dll_wrapper.
   # The CMakeLists.txt for libcef_dll_wrapper is in CEF_WRAPPER_SOURCE_DIR/libcef_dll.
