@@ -16,27 +16,31 @@ This repository provides a packaging solution for the Chromium Embedded Framewor
 To use this CEF package in your own CMake project, simply add the following line to your `CMakeLists.txt`:
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17c")
 # Link CEF to your application target (replace my_app with your target name)
 target_link_libraries(my_app PRIVATE 
-    CEF::cef                    # Main CEF interface
-    CEF::libcef_dll_wrapper     # CEF C++ wrapper library (for building CEF applications)
+    cef                         # Main CEF interface
+    libcef_dll_wrapper          # CEF C++ wrapper library (for building CEF applications)
 )
 ```
 
 This will automatically download, configure, and build CEF as part of your project, ensuring all dependencies and tests are handled as defined in this repository.
 
-**Note:** The package now exports both `CEF::cef` and `CEF::libcef_dll_wrapper` targets. The wrapper library is essential for building CEF applications in C++.
+**Note:** When using CPM.cmake directly, the targets are available as `cef` and `libcef_dll_wrapper`. The namespaced versions (`CEF::cef` and `CEF::libcef_dll_wrapper`) are available when the package is installed via the install process. The wrapper library is essential for building CEF applications in C++.
 
 ## Building CEF Window Applications
 
 ✅ **What's Available:**
-- **`CEF::cef`** - Main CEF interface library
-- **`CEF::libcef_dll_wrapper`** - C++ wrapper library (essential for CEF applications)
+- **`cef`** / **`CEF::cef`** - Main CEF interface library
+- **`libcef_dll_wrapper`** / **`CEF::libcef_dll_wrapper`** - C++ wrapper library (essential for CEF applications)
 - Complete CEF headers including wrapper utilities (`CefRefPtr<>`, `IMPLEMENT_REFCOUNTING()`, etc.)
 - Cross-platform support (Windows, macOS, Linux)
 
 This package exports both targets needed to build CEF applications like the included `cef_window_test.cpp`.
+
+**Target Availability:**
+- When using **CPM.cmake**: Use `cef` and `libcef_dll_wrapper` (non-namespaced)
+- When using **installed package**: Use `CEF::cef` and `CEF::libcef_dll_wrapper` (namespaced)
 
 ### Quick Start for CEF Applications
 
@@ -47,7 +51,7 @@ cmake_minimum_required(VERSION 3.15)
 project(my_cef_app LANGUAGES CXX)
 
 # Add the CEF package
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17c")
 
 # Create your executable
 add_executable(my_cef_app main.cpp)
@@ -58,8 +62,8 @@ set_property(TARGET my_cef_app PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Link CEF libraries - BOTH targets are required
 target_link_libraries(my_cef_app PRIVATE 
-    CEF::cef                    # Main CEF interface
-    CEF::libcef_dll_wrapper     # C++ wrapper library (provides CefRefPtr, etc.)
+    cef                         # Main CEF interface
+    libcef_dll_wrapper          # C++ wrapper library (provides CefRefPtr, etc.)
     Threads::Threads            # Threading support
 )
 
@@ -73,8 +77,10 @@ endif()
 ### Exported Targets
 
 The package exports:
-- **CEF::cef** - Main CEF interface library
-- **CEF::libcef_dll_wrapper** - CEF C++ wrapper library (essential for C++ applications)
+- **`cef`** / **`CEF::cef`** - Main CEF interface library
+- **`libcef_dll_wrapper`** / **`CEF::libcef_dll_wrapper`** - CEF C++ wrapper library (essential for C++ applications)
+
+**Important:** When using CPM.cmake, use the non-namespaced targets (`cef`, `libcef_dll_wrapper`). The namespaced targets (`CEF::cef`, `CEF::libcef_dll_wrapper`) are available when using the installed package via `find_package(CEF)`.
 
 ### Application Code Structure
 
@@ -191,6 +197,9 @@ FetchContent_Declare(
   GIT_TAG        main # or a specific release/tag
 )
 FetchContent_MakeAvailable(cef)
+
+# Use non-namespaced targets
+target_link_libraries(my_app PRIVATE cef libcef_dll_wrapper)
 ```
 
 ### Example: Advanced CPM.cmake usage with options
@@ -200,14 +209,13 @@ You can use the non-compact CPM.cmake notation to set CEF options such as `CEF_R
 ```cmake
 CPMAddPackage(
   NAME cef
-  GITHUB_REPOSITORY ambroise-leclerc/CEF
-  VERSION 137.0.17b
+  GITHUB_REPOSITORY ambroise-leclerc/CEF  VERSION 137.0.17c
   OPTIONS
     "CEF_ROBUST_DOWNLOAD ON"         # Enables robust download with retries and fallbacks (default: ON)
     "CEF_USE_MINIMAL_DIST ON"        # Download the minimal CEF distribution instead of the full one (default: OFF)
 )
-# Link CEF to your application target
-# target_link_libraries(my_app PRIVATE cef)
+# Link CEF to your application target using non-namespaced targets
+target_link_libraries(my_app PRIVATE cef libcef_dll_wrapper)
 ```
 
 - `CEF_ROBUST_DOWNLOAD`: If ON (default), enables a robust download strategy with retries and fallbacks for large files or unreliable networks.
@@ -391,6 +399,16 @@ The build system automatically detects your platform. If detection fails:
 - Ensure you're running on a supported platform (Linux x64, macOS x64, or Windows x64)
 - Check the CMake output for platform detection messages
 
+### CPM Integration Issues (Fixed)
+**Previous Issue:** Earlier versions of this package had a circular dependency issue when using CPM.cmake, causing errors like:
+```
+PRINT_CEF_CONFIG macro is not defined
+```
+
+**Solution:** This has been fixed in the current version. The issue was in the `CEFWrapper.cmake` file which incorrectly used `find_package(CEF REQUIRED)` during the build process, creating a circular dependency. The fix replaced this with direct inclusion of CEF's CMake files.
+
+**Current Status:** ✅ CPM.cmake integration now works correctly. Use the non-namespaced targets (`cef`, `libcef_dll_wrapper`) when consuming via CPM.
+
 ## Licensing
 
 This project is distributed under the terms of the CeCILL License. See `CECILL-LICENSE.txt` for details.
@@ -420,24 +438,28 @@ Pour intégrer ce package CEF à votre projet CMake, ajoutez simplement la ligne
 CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
 # Liez CEF à votre cible applicative (remplacez my_app par le nom de votre cible)
 target_link_libraries(my_app PRIVATE 
-    CEF::cef                    # Interface CEF principale
-    CEF::libcef_dll_wrapper     # Bibliothèque wrapper C++ (pour les applications CEF)
+    cef                         # Interface CEF principale
+    libcef_dll_wrapper          # Bibliothèque wrapper C++ (pour les applications CEF)
 )
 ```
 
 Cette commande télécharge, configure et compile automatiquement CEF, en assurant la gestion des dépendances et l'exécution des tests de validation.
 
-**Note :** Le package exporte désormais les cibles `CEF::cef` et `CEF::libcef_dll_wrapper`. La bibliothèque wrapper est essentielle pour construire des applications CEF en C++.
+**Note :** Quand vous utilisez CPM.cmake directement, les cibles sont disponibles sous forme non-namespacée `cef` et `libcef_dll_wrapper`. Les versions namespacées (`CEF::cef` et `CEF::libcef_dll_wrapper`) sont disponibles quand le package est installé via le processus d'installation. La bibliothèque wrapper est essentielle pour construire des applications CEF en C++.
 
 ## Construction d'Applications CEF avec Fenêtres
 
 ✅ **Ce qui est disponible :**
-- **`CEF::cef`** - Bibliothèque interface CEF principale  
-- **`CEF::libcef_dll_wrapper`** - Bibliothèque wrapper C++ (essentielle pour les applications CEF)
+- **`cef`** / **`CEF::cef`** - Bibliothèque interface CEF principale  
+- **`libcef_dll_wrapper`** / **`CEF::libcef_dll_wrapper`** - Bibliothèque wrapper C++ (essentielle pour les applications CEF)
 - En-têtes CEF complets incluant les utilitaires wrapper (`CefRefPtr<>`, `IMPLEMENT_REFCOUNTING()`, etc.)
 - Support multi-plateforme (Windows, macOS, Linux)
 
 Ce package exporte les deux cibles nécessaires pour construire des applications CEF comme le `cef_window_test.cpp` inclus.
+
+**Disponibilité des cibles :**
+- Quand vous utilisez **CPM.cmake** : Utilisez `cef` et `libcef_dll_wrapper` (non-namespacées)
+- Quand vous utilisez le **package installé** : Utilisez `CEF::cef` et `CEF::libcef_dll_wrapper` (namespacées)
 
 ### Démarrage rapide pour les applications CEF
 
@@ -448,7 +470,7 @@ cmake_minimum_required(VERSION 3.15)
 project(my_cef_app LANGUAGES CXX)
 
 # Ajouter le package CEF
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17c")
 
 # Créer votre exécutable
 add_executable(my_cef_app main.cpp)
@@ -459,8 +481,8 @@ set_property(TARGET my_cef_app PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Lier les bibliothèques CEF - LES DEUX cibles sont requises
 target_link_libraries(my_cef_app PRIVATE 
-    CEF::cef                    # Interface CEF principale
-    CEF::libcef_dll_wrapper     # Bibliothèque wrapper C++ (fournit CefRefPtr, etc.)
+    cef                         # Interface CEF principale
+    libcef_dll_wrapper          # Bibliothèque wrapper C++ (fournit CefRefPtr, etc.)
     Threads::Threads            # Support threading
 )
 
@@ -519,6 +541,9 @@ FetchContent_Declare(
   GIT_TAG        main # ou un tag spécifique
 )
 FetchContent_MakeAvailable(cef)
+
+# Utilisez les cibles non-namespacées
+target_link_libraries(my_app PRIVATE cef libcef_dll_wrapper)
 ```
 
 ### Exemple : Utilisation avancée de CPM.cmake avec options
@@ -528,14 +553,13 @@ Vous pouvez utiliser la notation CPM.cmake non compacte pour définir des option
 ```cmake
 CPMAddPackage(
   NAME cef
-  GITHUB_REPOSITORY ambroise-leclerc/CEF
-  VERSION 137.0.17b
+  GITHUB_REPOSITORY ambroise-leclerc/CEF  VERSION 137.0.17c
   OPTIONS
     "CEF_ROBUST_DOWNLOAD ON"         # Active le téléchargement robuste avec réessais et solutions de repli (par défaut : ON)
     "CEF_USE_MINIMAL_DIST ON"        # Télécharge la distribution minimale de CEF au lieu de la version complète (par défaut : OFF)
 )
-# Liez CEF à votre cible applicative
-# target_link_libraries(my_app PRIVATE cef)
+# Liez CEF à votre cible applicative en utilisant les cibles non-namespacées
+target_link_libraries(my_app PRIVATE cef libcef_dll_wrapper)
 ```
 
 - `CEF_ROBUST_DOWNLOAD` : Si activé (par défaut), active une stratégie de téléchargement robuste avec réessais et solutions de repli pour les fichiers volumineux ou les réseaux peu fiables.
@@ -702,6 +726,16 @@ Un conteneur de développement est fourni via `.devcontainer/` pour garantir un 
 ### Problèmes de détection de plateforme
 - Assurez-vous d'utiliser une plateforme supportée (Linux x64, macOS x64, Windows x64)
 - Consultez la sortie CMake pour les messages de détection
+
+### Problèmes d'intégration CPM (Corrigé)
+**Problème précédent :** Les versions antérieures de ce package avaient un problème de dépendance circulaire lors de l'utilisation de CPM.cmake, causant des erreurs comme :
+```
+PRINT_CEF_CONFIG macro is not defined
+```
+
+**Solution :** Ceci a été corrigé dans la version actuelle. Le problème était dans le fichier `CEFWrapper.cmake` qui utilisait incorrectement `find_package(CEF REQUIRED)` pendant le processus de build, créant une dépendance circulaire. La correction a remplacé ceci par l'inclusion directe des fichiers CMake de CEF.
+
+**Statut actuel :** ✅ L'intégration CPM.cmake fonctionne maintenant correctement. Utilisez les cibles non-namespacées (`cef`, `libcef_dll_wrapper`) lors de la consommation via CPM.
 
 ## Licence
 
