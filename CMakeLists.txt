@@ -29,3 +29,6 @@ include(cmake/CEFTesting.cmake)
 
 # Setup installation
 include(cmake/CEFInstall.cmake)
+
+# Setup deployment
+include(cmake/CEFDeployment.cmake)

@@ -17,11 +17,31 @@ To use this CEF package in your own CMake project, simply add the following line
 
 ```cmake
 CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.4")
-# Link CEF to your application target (replace my_app with your target name)
-target_link_libraries(my_app PRIVATE cef)
+
+# Create your executable
+add_executable(my_app main.cpp)
+
+# Configure CEF application (links libraries + deploys runtime files)
+cef_configure_app(my_app)
 ```
 
-This will automatically download, configure, and build CEF as part of your project, ensuring all dependencies and minimal tests are handled as defined in this repository.
+This will automatically download, configure, and build CEF as part of your project, ensuring all dependencies and minimal tests are handled as defined in this repository. The `cef_configure_app()` function provides automated runtime deployment, copying all necessary CEF files to your executable directory.
+
+#### Manual Linking (Alternative)
+If you prefer manual control over linking and deployment:
+
+```cmake
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.4")
+
+# Create your executable
+add_executable(my_app main.cpp)
+
+# Link CEF libraries manually
+target_link_libraries(my_app PRIVATE cef)
+
+# Optional: Deploy runtime files automatically
+cef_deploy_runtime(my_app)
+```
 
 ### Without CPM.cmake
 If you do not use CPM.cmake, you may include this repository as a subdirectory or use CMake's FetchContent module:
@@ -65,9 +85,19 @@ CPMAddPackage(
 
 ## Features
 - Provides a reproducible and automated packaging of CEF for Linux, macOS, and Windows
+- **Automated Runtime Deployment**: Automatically copies CEF runtime files (DLLs, resources, locales) to your executable directory
+- **Cross-Platform Deployment**: Handles platform-specific deployment requirements (Windows DLLs, Linux RPATH, macOS frameworks)
+- **One-Function Setup**: Use `cef_configure_app()` for complete CEF application configuration
 - Integrates with CMake and CPM.cmake for easy consumption
 - Includes a minimal sanity test to verify correct integration
 - Continuous Integration (CI) with GitHub Actions for reliability across all platforms
+
+### Deployment Functions
+- `cef_configure_app(target)`: Complete CEF application setup (linking + deployment)
+- `cef_deploy_runtime(target)`: Deploy only runtime files to executable directory
+- `cef_get_settings_paths(var)`: Get correct resource paths for CEF initialization
+
+For detailed deployment documentation, see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## Platform Support
 
@@ -192,15 +222,35 @@ Ce dépôt propose une solution de packaging automatisée pour Chromium Embedded
 ## Utilisation
 
 ### Avec CPM.cmake (recommandé)
-Pour intégrer ce package CEF à votre projet CMake, ajoutez simplement la ligne suivante à votre `CMakeLists.txt` :
+Pour intégrer ce package CEF à votre projet CMake, ajoutez simplement la ligne suivante à votre `CMakeLists.txt` :
 
 ```cmake
 CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.4")
-# Liez CEF à votre cible applicative (remplacez my_app par le nom de votre cible)
-target_link_libraries(my_app PRIVATE cef)
+
+# Créez votre exécutable
+add_executable(my_app main.cpp)
+
+# Configurez l'application CEF (liaison + déploiement des fichiers runtime)
+cef_configure_app(my_app)
 ```
 
-Cette commande télécharge, configure et compile automatiquement CEF, en assurant la gestion des dépendances et l'exécution des tests de validation.
+Cette commande télécharge, configure et compile automatiquement CEF, en assurant la gestion des dépendances et l'exécution des tests de validation. La fonction `cef_configure_app()` fournit un déploiement automatisé des fichiers runtime, copiant tous les fichiers CEF nécessaires dans le répertoire de votre exécutable.
+
+#### Liaison manuelle (alternative)
+Si vous préférez un contrôle manuel sur la liaison et le déploiement :
+
+```cmake
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.4")
+
+# Créez votre exécutable
+add_executable(my_app main.cpp)
+
+# Liez les bibliothèques CEF manuellement
+target_link_libraries(my_app PRIVATE cef)
+
+# Optionnel : Déployez automatiquement les fichiers runtime
+cef_deploy_runtime(my_app)
+```
 
 ### Sans CPM.cmake
 Vous pouvez également inclure ce dépôt comme sous-répertoire ou utiliser le module FetchContent de CMake :
@@ -244,9 +294,19 @@ CPMAddPackage(
 
 ## Fonctionnalités
 - Packaging reproductible et automatisé de CEF pour Linux, macOS et Windows
+- **Déploiement automatisé des fichiers runtime** : Copie automatiquement les fichiers runtime CEF (DLL, ressources, locales) dans le répertoire de votre exécutable
+- **Déploiement multiplateforme** : Gère les exigences de déploiement spécifiques à chaque plateforme (DLL Windows, RPATH Linux, frameworks macOS)
+- **Configuration en une fonction** : Utilisez `cef_configure_app()` pour une configuration complète d'application CEF
 - Intégration transparente avec CMake et CPM.cmake
 - Test de validation minimal pour garantir l'intégration
 - Intégration continue (CI) via GitHub Actions sur toutes les plateformes
+
+### Fonctions de déploiement
+- `cef_configure_app(target)` : Configuration complète d'application CEF (liaison + déploiement)
+- `cef_deploy_runtime(target)` : Déploie uniquement les fichiers runtime dans le répertoire de l'exécutable
+- `cef_get_settings_paths(var)` : Obtient les chemins de ressources corrects pour l'initialisation CEF
+
+Pour la documentation détaillée du déploiement, voir [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## Plateformes supportées
 - **Linux (x64)** : `cef_binary_*_linux64.tar.bz2`
