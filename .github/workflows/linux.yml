@@ -2,9 +2,14 @@ name: Linux Build
 
 on:
   push:
-    branches: ['**']
+    branches:
+      - main
+      - master
+      - '**'
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - master
 
 jobs:
   linux-build:
@@ -16,10 +21,10 @@ jobs:
       
       - name: Display build information
         run: |
-          echo "🐧 Building CEF for Linux"
+          echo "Building CEF for Linux"
           echo "Generator: Unix Makefiles (default)"
           echo "Architecture: $(uname -m)"
-          echo "Distribution: $(lsb_release -d 2>/dev/null || cat /etc/os-release | grep PRETTY_NAME || echo 'Unknown')"
+          echo "Linux version: $(lsb_release -d | cut -f2)"
           echo "Available disk space: $(df -h . | tail -1 | awk '{print $4}')"
       
       - name: Check network connectivity
@@ -27,6 +32,26 @@ jobs:
           echo "Testing network connectivity to CEF builds..."
           curl -I https://cef-builds.spotifycdn.com/ || echo "Direct connection failed, but this is expected"
           echo "Network test completed"
+      
+      - name: Install X11 development packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libx11-dev \
+            libxrandr-dev \
+            libxi-dev \
+            libgtk-3-dev \
+            libnss3-dev \
+            libasound2-dev
+      
+      - name: Setup virtual display
+        run: |
+          sudo apt-get install -y xvfb
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+          # Wait a moment for Xvfb to start
+          sleep 2
       
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1
@@ -36,11 +61,11 @@ jobs:
       - name: Configure
         run: cmake -B build -S . -DCEF_ROBUST_DOWNLOAD=ON
       
-      - name: Build
-        run: cmake --build build --config Release --target cef_sanity_test
+      - name: Build all tests
+        run: cmake --build build --config Release
       
-      - name: Run CEF sanity test
-        run: ./build/test/cef_sanity_test
+      - name: Run all CEF tests with CTest
+        run: cd build/test && ctest -C Release --verbose
       
       - name: Upload build artifacts
         if: always()
@@ -48,5 +73,5 @@ jobs:
         with:
           name: cef-build-linux-${{ github.sha }}
           path: |
-            build/test/cef_sanity_test
+            build/test/**/*test*
           retention-days: 7
