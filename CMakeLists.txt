@@ -30,6 +30,9 @@ include(cmake/CEFTesting.cmake)
 # Setup installation
 include(cmake/CEFInstall.cmake)
 
+# Setup deployment
+include(cmake/CEFDeployment.cmake)
+
 # Set the C++ standard to 17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

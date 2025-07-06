@@ -16,15 +16,35 @@ This repository provides a packaging solution for the Chromium Embedded Framewor
 To use this CEF package in your own CMake project, simply add the following line to your `CMakeLists.txt`:
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17c")
-# Link CEF to your application target (replace my_app with your target name)
-target_link_libraries(my_app PRIVATE 
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17d")
+
+# Create your executable
+add_executable(my_app main.cpp)
+
+# Configure CEF application (links libraries + deploys runtime files)
+cef_configure_app(my_app)
+```
+
+This will automatically download, configure, and build CEF as part of your project, ensuring all dependencies and tests are handled as defined in this repository. The `cef_configure_app()` function provides automated runtime deployment, copying all necessary CEF files to your executable directory.
+
+#### Manual Linking (Alternative)
+If you prefer manual control over linking and deployment:
+
+```cmake
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17d")
+
+# Create your executable
+add_executable(my_app main.cpp)
+
+# Link CEF libraries manually
+target_link_libraries(my_app PRIVATE
     cef                         # Main CEF interface
     libcef_dll_wrapper          # CEF C++ wrapper library (for building CEF applications)
 )
-```
 
-This will automatically download, configure, and build CEF as part of your project, ensuring all dependencies and tests are handled as defined in this repository.
+# Optional: Deploy runtime files automatically
+cef_deploy_runtime(my_app)
+```
 
 **Note:** When using CPM.cmake directly, the targets are available as `cef` and `libcef_dll_wrapper`. The namespaced versions (`CEF::cef` and `CEF::libcef_dll_wrapper`) are available when the package is installed via the install process. The wrapper library is essential for building CEF applications in C++.
 
@@ -51,7 +71,7 @@ cmake_minimum_required(VERSION 3.15)
 project(my_cef_app LANGUAGES CXX)
 
 # Add the CEF package
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17c")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17d")
 
 # Create your executable
 add_executable(my_cef_app main.cpp)
@@ -61,7 +81,7 @@ set_property(TARGET my_cef_app PROPERTY CXX_STANDARD 17)
 set_property(TARGET my_cef_app PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Link CEF libraries - BOTH targets are required
-target_link_libraries(my_cef_app PRIVATE 
+target_link_libraries(my_cef_app PRIVATE
     cef                         # Main CEF interface
     libcef_dll_wrapper          # C++ wrapper library (provides CefRefPtr, etc.)
     Threads::Threads            # Threading support
@@ -89,7 +109,7 @@ Your application should include and use:
 ```cpp
 // Essential CEF headers
 #include "include/cef_app.h"
-#include "include/cef_browser.h" 
+#include "include/cef_browser.h"
 #include "include/cef_client.h"
 #include "include/views/cef_browser_view.h"
 #include "include/views/cef_window.h"
@@ -209,7 +229,7 @@ You can use the non-compact CPM.cmake notation to set CEF options such as `CEF_R
 ```cmake
 CPMAddPackage(
   NAME cef
-  GITHUB_REPOSITORY ambroise-leclerc/CEF  VERSION 137.0.17c
+  GITHUB_REPOSITORY ambroise-leclerc/CEF  VERSION 137.0.17d
   OPTIONS
     "CEF_ROBUST_DOWNLOAD ON"         # Enables robust download with retries and fallbacks (default: ON)
     "CEF_USE_MINIMAL_DIST ON"        # Download the minimal CEF distribution instead of the full one (default: OFF)
@@ -229,9 +249,19 @@ target_link_libraries(my_app PRIVATE cef libcef_dll_wrapper)
 - ✅ **CMake integration** - Easy to use with modern CMake and CPM.cmake
 - ✅ **Window application support** - Everything needed to build CEF window applications
 - Provides a reproducible and automated packaging of CEF for Linux, macOS, and Windows
+- **Automated Runtime Deployment**: Automatically copies CEF runtime files (DLLs, resources, locales) to your executable directory
+- **Cross-Platform Deployment**: Handles platform-specific deployment requirements (Windows DLLs, Linux RPATH, macOS frameworks)
+- **One-Function Setup**: Use `cef_configure_app()` for complete CEF application configuration
 - Integrates with CMake and CPM.cmake for easy consumption
 - Includes comprehensive tests to verify correct integration and functionality
 - Continuous Integration (CI) with GitHub Actions for reliability across all platforms
+
+### Deployment Functions
+- `cef_configure_app(target)`: Complete CEF application setup (linking + deployment)
+- `cef_deploy_runtime(target)`: Deploy only runtime files to executable directory
+- `cef_get_settings_paths(var)`: Get correct resource paths for CEF initialization
+
+For detailed deployment documentation, see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## Tests
 
@@ -432,18 +462,35 @@ Ce dépôt propose une solution de packaging automatisée pour Chromium Embedded
 ## Utilisation
 
 ### Avec CPM.cmake (recommandé)
-Pour intégrer ce package CEF à votre projet CMake, ajoutez simplement la ligne suivante à votre `CMakeLists.txt` :
+Pour intégrer ce package CEF à votre projet CMake, ajoutez simplement la ligne suivante à votre `CMakeLists.txt` :
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17b")
-# Liez CEF à votre cible applicative (remplacez my_app par le nom de votre cible)
-target_link_libraries(my_app PRIVATE 
-    cef                         # Interface CEF principale
-    libcef_dll_wrapper          # Bibliothèque wrapper C++ (pour les applications CEF)
-)
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17d")
+
+# Créez votre exécutable
+add_executable(my_app main.cpp)
+
+# Configurez l'application CEF (liaison + déploiement des fichiers runtime)
+cef_configure_app(my_app)
 ```
 
-Cette commande télécharge, configure et compile automatiquement CEF, en assurant la gestion des dépendances et l'exécution des tests de validation.
+Cette commande télécharge, configure et compile automatiquement CEF, en assurant la gestion des dépendances et l'exécution des tests de validation. La fonction `cef_configure_app()` fournit un déploiement automatisé des fichiers runtime, copiant tous les fichiers CEF nécessaires dans le répertoire de votre exécutable.
+
+#### Liaison manuelle (alternative)
+Si vous préférez un contrôle manuel sur la liaison et le déploiement :
+
+```cmake
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.4")
+
+# Créez votre exécutable
+add_executable(my_app main.cpp)
+
+# Liez les bibliothèques CEF manuellement
+target_link_libraries(my_app PRIVATE cef)
+
+# Optionnel : Déployez automatiquement les fichiers runtime
+cef_deploy_runtime(my_app)
+```
 
 **Note :** Quand vous utilisez CPM.cmake directement, les cibles sont disponibles sous forme non-namespacée `cef` et `libcef_dll_wrapper`. Les versions namespacées (`CEF::cef` et `CEF::libcef_dll_wrapper`) sont disponibles quand le package est installé via le processus d'installation. La bibliothèque wrapper est essentielle pour construire des applications CEF en C++.
 
@@ -470,7 +517,7 @@ cmake_minimum_required(VERSION 3.15)
 project(my_cef_app LANGUAGES CXX)
 
 # Ajouter le package CEF
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17c")
+CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17d")
 
 # Créer votre exécutable
 add_executable(my_cef_app main.cpp)
@@ -553,7 +600,7 @@ Vous pouvez utiliser la notation CPM.cmake non compacte pour définir des option
 ```cmake
 CPMAddPackage(
   NAME cef
-  GITHUB_REPOSITORY ambroise-leclerc/CEF  VERSION 137.0.17c
+  GITHUB_REPOSITORY ambroise-leclerc/CEF  VERSION 137.0.17d
   OPTIONS
     "CEF_ROBUST_DOWNLOAD ON"         # Active le téléchargement robuste avec réessais et solutions de repli (par défaut : ON)
     "CEF_USE_MINIMAL_DIST ON"        # Télécharge la distribution minimale de CEF au lieu de la version complète (par défaut : OFF)
@@ -573,56 +620,66 @@ target_link_libraries(my_app PRIVATE cef libcef_dll_wrapper)
 - ✅ **Intégration CMake** - Facile à utiliser avec CMake moderne et CPM.cmake
 - ✅ **Support d'applications avec fenêtres** - Tout ce qui est nécessaire pour construire des applications CEF avec fenêtres
 - Packaging reproductible et automatisé de CEF pour Linux, macOS et Windows
+- **Déploiement automatisé des fichiers runtime** : Copie automatiquement les fichiers runtime CEF (DLL, ressources, locales) dans le répertoire de votre exécutable
+- **Déploiement multiplateforme** : Gère les exigences de déploiement spécifiques à chaque plateforme (DLL Windows, RPATH Linux, frameworks macOS)
+- **Configuration en une fonction** : Utilisez `cef_configure_app()` pour une configuration complète d'application CEF
 - Intégration transparente avec CMake et CPM.cmake
 - Inclut des tests complets pour vérifier l'intégration correcte et la fonctionnalité
 - Intégration continue (CI) via GitHub Actions sur toutes les plateformes
 
+### Fonctions de déploiement
+- `cef_configure_app(target)` : Configuration complète d'application CEF (liaison + déploiement)
+- `cef_deploy_runtime(target)` : Déploie uniquement les fichiers runtime dans le répertoire de l'exécutable
+- `cef_get_settings_paths(var)` : Obtient les chemins de ressources corrects pour l'initialisation CEF
+
+Pour la documentation détaillée du déploiement, voir [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
 ## Tests
 
-Ce packaging CEF comprend trois tests complets pour valider l'intégration et la fonctionnalité appropriées :
+Ce packaging CEF comprend trois tests complets pour valider l'intégration et la fonctionnalité appropriées :
 
 ### 1. Test de validation CEF (`cef_sanity_test`)
-**Objectif** : Valider la fonctionnalité de base de CEF et l'accessibilité des en-têtes
+**Objectif** : Valider la fonctionnalité de base de CEF et l'accessibilité des en-têtes
 - ✅ Teste le chargement de la bibliothèque CEF sur les plateformes prises en charge
 - ✅ Vérifie que les en-têtes CEF sont correctement accessibles
 - ✅ Récupère et affiche les informations de version de CEF (version, hash de commit, version de Chrome)
 - ✅ Configure les structures de base de CEF (CefMainArgs, CefSettings)
 - ✅ Valide la compatibilité multiplateforme
 
-**Utilisation** : Il s'agit du test principal utilisé dans les workflows CI pour garantir le bon fonctionnement du packaging.
+**Utilisation** : Il s'agit du test principal utilisé dans les workflows CI pour garantir le bon fonctionnement du packaging.
 
 ### 2. Test des ressources CEF (`cef_resources_test`)
-**Objectif** : Valider que les fichiers binaires et les ressources CEF sont correctement déployés
+**Objectif** : Valider que les fichiers binaires et les ressources CEF sont correctement déployés
 - ✅ Vérifie la présence des fichiers binaires CEF spécifiques à la plateforme (libcef.dll, Chromium Embedded Framework.framework, libcef.so)
 - ✅ Vérifie le répertoire et le contenu des ressources CEF
 - ✅ Affiche des informations détaillées sur la construction de CEF (hash de commit, version de Chrome)
 - ✅ Validation consciente de la plateforme (exigences différentes pour Windows, macOS, Linux)
 - ✅ Assure que le système de packaging déploie correctement tous les fichiers nécessaires
 
-**Fichiers spécifiques à la plateforme vérifiés** :
-- **Windows** : `libcef.dll`, `chrome_elf.dll`, `d3dcompiler_47.dll`
-- **macOS** : `Chromium Embedded Framework.framework`
-- **Linux** : `libcef.so`, `chrome-sandbox`
+**Fichiers spécifiques à la plateforme vérifiés** :
+- **Windows** : `libcef.dll`, `chrome_elf.dll`, `d3dcompiler_47.dll`
+- **macOS** : `Chromium Embedded Framework.framework`
+- **Linux** : `libcef.so`, `chrome-sandbox`
 
 ### 3. Test de la fenêtre CEF (`cef_window_test`)
-**Objectif** : Créer et afficher une véritable fenêtre CEF visible pour tester la fonctionnalité complète
+**Objectif** : Créer et afficher une véritable fenêtre CEF visible pour tester la fonctionnalité complète
 - ✅ Crée une véritable fenêtre de navigateur CEF visible en utilisant le framework CEF Views
 - ✅ Teste l'initialisation de CEF, la création de contexte et le cycle de vie de la fenêtre
 - ✅ Valide la création de la vue du navigateur et le rendu du contenu HTML
 - ✅ Démonstre l'intégration complète de CEF avec la fonctionnalité UI
 - ✅ Se ferme automatiquement après 3 secondes pour vérifier la gestion de la fenêtre
 
-**Remarque** : Ce test crée une fenêtre visible affichant "🎉 REAL CEF WINDOW! 🎉" avec des informations sur la version de CEF.
+**Remarque** : Ce test crée une fenêtre visible affichant "🎉 REAL CEF WINDOW! 🎉" avec des informations sur la version de CEF.
 
 ### Exécution des tests
 
-**Compiler et exécuter tous les tests :**
+**Compiler et exécuter tous les tests :**
 ```bash
 cmake -B build -S .
 cmake --build build --config Release
 ```
 
-**Exécuter des tests individuels :**
+**Exécuter des tests individuels :**
 ```bash
 # Test de validation (utilisé dans CI)
 ./build/test/cef_sanity_test
@@ -634,7 +691,7 @@ cmake --build build --config Release
 ./build/test/cef_window_test
 ```
 
-**Windows :**
+**Windows :**
 ```bash
 ./build/test/Release/cef_sanity_test.exe
 ./build/test/Release/cef_resources_test.exe
