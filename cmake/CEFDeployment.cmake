@@ -123,7 +123,7 @@ function(cef_deploy_runtime target_name)
         if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR MATCHES "Xcode")
             set(CEF_TARGET_OUT_DIR "$<TARGET_FILE_DIR:${target_name}>")
         else()
-            set(CEF_TARGET_OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
+            set(CEF_TARGET_OUT_DIR "$<TARGET_FILE_DIR:${target_name}>")
         endif()
     endif()
     
