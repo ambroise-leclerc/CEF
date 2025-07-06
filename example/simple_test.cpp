@@ -22,10 +22,10 @@ int main() {
     int found_count = 0;
     for (const auto& file : expected_files) {
         if (std::filesystem::exists(exe_dir / file)) {
-            std::cout << "✓ Found: " << file << std::endl;
+            std::cout << "[OK] Found: " << file << std::endl;
             found_count++;
         } else {
-            std::cout << "✗ Missing: " << file << std::endl;
+            std::cout << "[MISSING] Missing: " << file << std::endl;
         }
     }
 
