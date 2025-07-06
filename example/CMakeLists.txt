@@ -33,6 +33,13 @@ include(cmake/CEFDeployment)
 # Create the simple example executable
 add_executable(simple_app simple_app.cpp)
 
+# Set Windows subsystem for simple_app
+if(WIN32)
+    set_target_properties(simple_app PROPERTIES
+        WIN32_EXECUTABLE TRUE
+    )
+endif()
+
 # Create a simple deployment test executable
 add_executable(simple_test simple_test.cpp)
 
