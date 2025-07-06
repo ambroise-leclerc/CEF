@@ -152,46 +152,34 @@ function(_cef_deploy_linux target_name)
     _cef_get_binary_files(binary_files)
     _cef_get_resource_files(resource_files)
     
-    # Deploy binary files
+    # Deploy binary files using fallback approach (more reliable)
     if(binary_files)
-        if(COMMAND COPY_FILES)
-            COPY_FILES("${target_name}" "${CEF_BINARY_DIR}" "${CEF_TARGET_OUT_DIR}" FILES ${binary_files})
-        else()
-            # Fallback: use add_custom_command for each file
-            foreach(file ${binary_files})
-                if(EXISTS "${CEF_BINARY_DIR}/${file}")
-                    add_custom_command(
-                        TARGET ${target_name}
-                        POST_BUILD
-                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                                "${CEF_BINARY_DIR}/${file}"
-                                "${CEF_TARGET_OUT_DIR}/${file}"
-                        VERBATIM
-                    )
-                endif()
-            endforeach()
-        endif()
+        foreach(file ${binary_files})
+            add_custom_command(
+                TARGET ${target_name}
+                POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${CEF_BINARY_DIR}/${file}"
+                        "$<TARGET_FILE_DIR:${target_name}>/${file}"
+                VERBATIM
+                COMMENT "Deploying CEF binary: ${file}"
+            )
+        endforeach()
     endif()
     
-    # Deploy resource files
+    # Deploy resource files using fallback approach (more reliable)
     if(resource_files)
-        if(COMMAND COPY_FILES)
-            COPY_FILES("${target_name}" "${CEF_RESOURCE_DIR}" "${CEF_TARGET_OUT_DIR}" FILES ${resource_files})
-        else()
-            # Fallback: use add_custom_command for each file
-            foreach(file ${resource_files})
-                if(EXISTS "${CEF_RESOURCE_DIR}/${file}")
-                    add_custom_command(
-                        TARGET ${target_name}
-                        POST_BUILD
-                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                                "${CEF_RESOURCE_DIR}/${file}"
-                                "${CEF_TARGET_OUT_DIR}/${file}"
-                        VERBATIM
-                    )
-                endif()
-            endforeach()
-        endif()
+        foreach(file ${resource_files})
+            add_custom_command(
+                TARGET ${target_name}
+                POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${CEF_RESOURCE_DIR}/${file}"
+                        "$<TARGET_FILE_DIR:${target_name}>/${file}"
+                VERBATIM
+                COMMENT "Deploying CEF resource: ${file}"
+            )
+        endforeach()
     endif()
     
     # Deploy locales directory
@@ -201,8 +189,9 @@ function(_cef_deploy_linux target_name)
             POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
                     "${CEF_RESOURCE_DIR}/locales"
-                    "${CEF_TARGET_OUT_DIR}/locales"
+                    "$<TARGET_FILE_DIR:${target_name}>/locales"
             VERBATIM
+            COMMENT "Deploying CEF locales directory"
         )
     endif()
     
@@ -213,8 +202,9 @@ function(_cef_deploy_linux target_name)
             POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
                     "${CEF_RESOURCE_DIR}/Resources"
-                    "${CEF_TARGET_OUT_DIR}/Resources"
+                    "$<TARGET_FILE_DIR:${target_name}>/Resources"
             VERBATIM
+            COMMENT "Deploying CEF Resources directory"
         )
     endif()
     
@@ -247,46 +237,34 @@ function(_cef_deploy_windows target_name)
     _cef_get_binary_files(binary_files)
     _cef_get_resource_files(resource_files)
     
-    # Deploy binary files
+    # Deploy binary files using fallback approach (more reliable)
     if(binary_files)
-        if(COMMAND COPY_FILES)
-            COPY_FILES("${target_name}" "${CEF_BINARY_DIR}" "${CEF_TARGET_OUT_DIR}" FILES ${binary_files})
-        else()
-            # Fallback: use add_custom_command for each file
-            foreach(file ${binary_files})
-                if(EXISTS "${CEF_BINARY_DIR}/${file}")
-                    add_custom_command(
-                        TARGET ${target_name}
-                        POST_BUILD
-                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                                "${CEF_BINARY_DIR}/${file}"
-                                "${CEF_TARGET_OUT_DIR}/${file}"
-                        VERBATIM
-                    )
-                endif()
-            endforeach()
-        endif()
+        foreach(file ${binary_files})
+            add_custom_command(
+                TARGET ${target_name}
+                POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${CEF_BINARY_DIR}/${file}"
+                        "$<TARGET_FILE_DIR:${target_name}>/${file}"
+                VERBATIM
+                COMMENT "Deploying CEF binary: ${file}"
+            )
+        endforeach()
     endif()
     
-    # Deploy resource files
+    # Deploy resource files using fallback approach (more reliable)
     if(resource_files)
-        if(COMMAND COPY_FILES)
-            COPY_FILES("${target_name}" "${CEF_RESOURCE_DIR}" "${CEF_TARGET_OUT_DIR}" FILES ${resource_files})
-        else()
-            # Fallback: use add_custom_command for each file
-            foreach(file ${resource_files})
-                if(EXISTS "${CEF_RESOURCE_DIR}/${file}")
-                    add_custom_command(
-                        TARGET ${target_name}
-                        POST_BUILD
-                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                                "${CEF_RESOURCE_DIR}/${file}"
-                                "${CEF_TARGET_OUT_DIR}/${file}"
-                        VERBATIM
-                    )
-                endif()
-            endforeach()
-        endif()
+        foreach(file ${resource_files})
+            add_custom_command(
+                TARGET ${target_name}
+                POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${CEF_RESOURCE_DIR}/${file}"
+                        "$<TARGET_FILE_DIR:${target_name}>/${file}"
+                VERBATIM
+                COMMENT "Deploying CEF resource: ${file}"
+            )
+        endforeach()
     endif()
     
     # Deploy locales directory
@@ -296,8 +274,9 @@ function(_cef_deploy_windows target_name)
             POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
                     "${CEF_RESOURCE_DIR}/locales"
-                    "${CEF_TARGET_OUT_DIR}/locales"
+                    "$<TARGET_FILE_DIR:${target_name}>/locales"
             VERBATIM
+            COMMENT "Deploying CEF locales directory"
         )
     endif()
     
@@ -308,8 +287,9 @@ function(_cef_deploy_windows target_name)
             POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
                     "${CEF_RESOURCE_DIR}/Resources"
-                    "${CEF_TARGET_OUT_DIR}/Resources"
+                    "$<TARGET_FILE_DIR:${target_name}>/Resources"
             VERBATIM
+            COMMENT "Deploying CEF Resources directory"
         )
     endif()
 endfunction()
