@@ -155,7 +155,7 @@ function(_cef_deploy_linux target_name)
     # Deploy binary files
     if(binary_files)
         if(COMMAND COPY_FILES)
-            COPY_FILES("${target_name}" "${binary_files}" "${CEF_BINARY_DIR}" "${CEF_TARGET_OUT_DIR}")
+            COPY_FILES("${target_name}" "${CEF_BINARY_DIR}" "${CEF_TARGET_OUT_DIR}" FILES ${binary_files})
         else()
             # Fallback: use add_custom_command for each file
             foreach(file ${binary_files})
@@ -176,7 +176,7 @@ function(_cef_deploy_linux target_name)
     # Deploy resource files
     if(resource_files)
         if(COMMAND COPY_FILES)
-            COPY_FILES("${target_name}" "${resource_files}" "${CEF_RESOURCE_DIR}" "${CEF_TARGET_OUT_DIR}")
+            COPY_FILES("${target_name}" "${CEF_RESOURCE_DIR}" "${CEF_TARGET_OUT_DIR}" FILES ${resource_files})
         else()
             # Fallback: use add_custom_command for each file
             foreach(file ${resource_files})
@@ -250,7 +250,7 @@ function(_cef_deploy_windows target_name)
     # Deploy binary files
     if(binary_files)
         if(COMMAND COPY_FILES)
-            COPY_FILES("${target_name}" "${binary_files}" "${CEF_BINARY_DIR}" "${CEF_TARGET_OUT_DIR}")
+            COPY_FILES("${target_name}" "${CEF_BINARY_DIR}" "${CEF_TARGET_OUT_DIR}" FILES ${binary_files})
         else()
             # Fallback: use add_custom_command for each file
             foreach(file ${binary_files})
@@ -271,7 +271,7 @@ function(_cef_deploy_windows target_name)
     # Deploy resource files
     if(resource_files)
         if(COMMAND COPY_FILES)
-            COPY_FILES("${target_name}" "${resource_files}" "${CEF_RESOURCE_DIR}" "${CEF_TARGET_OUT_DIR}")
+            COPY_FILES("${target_name}" "${CEF_RESOURCE_DIR}" "${CEF_TARGET_OUT_DIR}" FILES ${resource_files})
         else()
             # Fallback: use add_custom_command for each file
             foreach(file ${resource_files})
