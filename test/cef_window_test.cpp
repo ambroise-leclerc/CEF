@@ -5,7 +5,6 @@
 #include <functional>
 #include <filesystem>
 #include <cstdint>
-#include <cstdlib>
 #include <optional>
 #include <random>
 #include <string>
@@ -241,18 +240,6 @@ private:
     IMPLEMENT_REFCOUNTING(RealWindowTestApp);
 };
 
-// Environment variable through which the browser process hands its profile
-// directory to the CEF subprocesses of the same run (they inherit it).
-constexpr const char* kProfileDirEnvVar = "CEF_WINDOW_TEST_PROFILE_DIR";
-
-static void SetProfileDirEnv(const std::string& value) {
-#ifdef _WIN32
-    _putenv_s(kProfileDirEnvVar, value.c_str());
-#else
-    setenv(kProfileDirEnvVar, value.c_str(), 1);
-#endif
-}
-
 // Owns a unique per-run profile directory under the system temp directory and
 // removes it on destruction, so failure paths are cleaned up as well.
 class TestProfileDir {
@@ -334,8 +321,8 @@ int main(int argc, char* argv[]) {
 #endif
 
     // CEF subprocesses (renderer, GPU, utility...) relaunch this executable with
-    // --type=. They must not create or delete a profile: they reuse the one the
-    // browser process published in the environment and on the command line.
+    // --type=. They must not create or delete a profile: Chromium passes them the
+    // browser process's --user-data-dir on their command line.
     if (IsSubprocess(argc, argv)) {
 #ifdef _WIN32
         CefMainArgs subprocess_args(GetModuleHandle(nullptr));
@@ -355,7 +342,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     const std::string profile_dir = profile->path().string();
-    SetProfileDirEnv(profile_dir);
     std::cout << "Using isolated profile directory: " << profile_dir << std::endl;
 
     // Create a modified argument list with additional switches to prevent keychain access
