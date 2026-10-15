@@ -3,6 +3,7 @@
 
 // Include necessary CEF headers
 #include "include/cef_version.h"
+#include "include/cef_version_info.h"
 #include "include/cef_app.h"
 
 // Platform-specific includes for library loader (macOS only)
@@ -20,7 +21,8 @@ int main(int argc, char* argv[]) {
 #if HAS_CEF_LIBRARY_LOADER
     CefScopedLibraryLoader library_loader;
     if (!library_loader.LoadInMain()) {
-        std::cout << "⚠️  CEF library not loaded, testing headers only..." << std::endl;
+        std::cerr << "CEF library could not be loaded" << std::endl;
+        return 1;
     } else {
         std::cout << "✅ CEF library loaded successfully" << std::endl;
         
@@ -39,9 +41,26 @@ int main(int argc, char* argv[]) {
         std::cout << "⚠️  Skipping full CEF initialization (not needed for sanity test)" << std::endl;
     }
 #else
-    std::cout << "⚠️  CEF library loader not available on this platform, testing headers only..." << std::endl;
+    std::cout << "CEF runtime is linked directly on this platform" << std::endl;
 #endif
     
+    // Check the deployed runtime, not just the headers: stale runtime files
+    // must fail a version upgrade even when the application still links.
+    const int expected_versions[] = {
+        CEF_VERSION_MAJOR, CEF_VERSION_MINOR, CEF_VERSION_PATCH, CEF_COMMIT_NUMBER,
+        CHROME_VERSION_MAJOR, CHROME_VERSION_MINOR, CHROME_VERSION_BUILD, CHROME_VERSION_PATCH
+    };
+    for (int entry = 0; entry < 8; ++entry) {
+        const int actual = cef_version_info(entry);
+        if (actual != expected_versions[entry]) {
+            std::cerr << "CEF runtime/header version mismatch at entry " << entry
+                      << ": expected " << expected_versions[entry]
+                      << ", got " << actual << std::endl;
+            return 1;
+        }
+    }
+    std::cout << "CEF runtime version matches the build headers" << std::endl;
+
     // Test 3: CEF Version Information Access
     std::cout << "Testing CEF version information access..." << std::endl;
     

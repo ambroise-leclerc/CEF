@@ -10,13 +10,23 @@
 
 This repository provides a packaging solution for the Chromium Embedded Framework (CEF) on Linux, macOS, and Windows, enabling seamless integration into C++ projects. The packaging is designed for use with [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake), allowing other projects to easily fetch and build CEF as a dependency.
 
+## Current development version
+
+This branch packages **CEF 154.0.34**, based on **Chromium 154.0.8037.98**.
+It requires **C++20** and **CMake 3.24+** (CI uses 3.27.9). Linking `cef` or
+`libcef_dll_wrapper` propagates the C++20 requirement to consumers.
+The examples below track `main` until the new package release is validated and
+published; use an immutable commit or published release tag for reproducible builds.
+Existing `v137.*` tags continue to package the older CEF version.
+See [upgrade notes and validation](docs/CEF154_UPGRADE.md) for migration details.
+
 ## Usage
 
 ### With CPM.cmake (Recommended)
 To use this CEF package in your own CMake project, simply add the following line to your `CMakeLists.txt`:
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17d")
+CPMAddPackage("gh:ambroise-leclerc/CEF#main")
 
 # Create your executable
 add_executable(my_app main.cpp)
@@ -31,7 +41,7 @@ This will automatically download, configure, and build CEF as part of your proje
 If you prefer manual control over linking and deployment:
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17d")
+CPMAddPackage("gh:ambroise-leclerc/CEF#main")
 
 # Create your executable
 add_executable(my_app main.cpp)
@@ -67,17 +77,17 @@ This package exports both targets needed to build CEF applications like the incl
 Create a CEF window application with these simple steps:
 
 ```cmake
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.24)
 project(my_cef_app LANGUAGES CXX)
 
 # Add the CEF package
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17d")
+CPMAddPackage("gh:ambroise-leclerc/CEF#main")
 
 # Create your executable
 add_executable(my_cef_app main.cpp)
 
-# Set C++ standard (CEF requires C++17)
-set_property(TARGET my_cef_app PROPERTY CXX_STANDARD 17)
+# Set C++ standard (CEF requires C++20)
+set_property(TARGET my_cef_app PROPERTY CXX_STANDARD 20)
 set_property(TARGET my_cef_app PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Link CEF libraries - BOTH targets are required
@@ -229,7 +239,7 @@ You can use the non-compact CPM.cmake notation to set CEF options such as `CEF_R
 ```cmake
 CPMAddPackage(
   NAME cef
-  GITHUB_REPOSITORY ambroise-leclerc/CEF  VERSION 137.0.17d
+  GITHUB_REPOSITORY ambroise-leclerc/CEF  GIT_TAG main
   OPTIONS
     "CEF_ROBUST_DOWNLOAD ON"         # Enables robust download with retries and fallbacks (default: ON)
     "CEF_USE_MINIMAL_DIST ON"        # Download the minimal CEF distribution instead of the full one (default: OFF)
@@ -342,21 +352,21 @@ This CEF packaging supports the following platforms:
 ### Build Requirements
 
 #### Windows
-- Visual Studio 2019 or later (with C++ tools)
-- CMake 3.27 or later
+- Visual Studio 2022 or later (with C++ tools)
+- CMake 3.24 or later
 - Windows 10 SDK
 
 #### Linux
-- GCC or Clang compiler
-- CMake 3.27 or later
+- GCC 10+ or a C++20-capable Clang compiler
+- CMake 3.24 or later
 
 #### macOS
-- Xcode or Command Line Tools
-- CMake 3.27 or later
+- Xcode 16+ and Command Line Tools (macOS 14.5+ build host)
+- CMake 3.24 or later
 
 The platform is automatically detected during the CMake configuration phase, and the appropriate CEF binary distribution is downloaded and configured.
 
-**Current CEF Version**: 137.0.17+g8614a8d+chromium-137.0.7151.6
+**Current CEF Version**: 154.0.34+g14c5a08+chromium-154.0.8037.98
 
 This version is chosen for its stability and cross-platform availability. If you need a different CEF version, you can modify the `CEF_VERSION` variable in the main `CMakeLists.txt` file, but ensure that the version you choose has builds available for all platforms you intend to support.
 
@@ -364,9 +374,9 @@ This version is chosen for its stability and cross-platform availability. If you
 - Operating system: Linux, macOS, or Windows (x64)
 - C++ compiler:
   - **Linux**: GCC 11 or newer recommended
-  - **macOS**: Xcode or Command Line Tools
-  - **Windows**: Visual Studio 2019 or later
-- [CMake](https://cmake.org/) version 3.27 or later (workflows use 3.27.9)
+  - **macOS**: Xcode 16+ and Command Line Tools (macOS 14.5+ build host)
+  - **Windows**: Visual Studio 2022 or later
+- [CMake](https://cmake.org/) version 3.24 or later (workflows use 3.27.9)
 - Git
 
 ## Building and Testing (for maintainers)
@@ -459,13 +469,23 @@ For academic or industrial use, please cite the relevant upstream projects and a
 
 Ce dépôt propose une solution de packaging automatisée pour Chromium Embedded Framework (CEF) sur Linux, macOS et Windows. Il permet une intégration de CEF dans des projets C++ modernes. L'intégration avec [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake) facilite la gestion des dépendances et l'automatisation du processus de build.
 
+## Version de développement actuelle
+
+Cette branche fournit **CEF 154.0.34**, basé sur **Chromium 154.0.8037.98**.
+Elle nécessite **C++20** et **CMake 3.24+** (la CI utilise 3.27.9). Les cibles
+`cef` et `libcef_dll_wrapper` transmettent le prérequis C++20 aux consommateurs.
+Les exemples suivent `main` en attendant la validation et la publication de la
+nouvelle version ; utilisez un commit immuable ou un tag publié pour des builds
+reproductibles. Les tags `v137.*` conservent leur ancienne version de CEF.
+Consultez les [notes de migration et de validation](docs/CEF154_UPGRADE.md).
+
 ## Utilisation
 
 ### Avec CPM.cmake (recommandé)
 Pour intégrer ce package CEF à votre projet CMake, ajoutez simplement la ligne suivante à votre `CMakeLists.txt` :
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17d")
+CPMAddPackage("gh:ambroise-leclerc/CEF#main")
 
 # Créez votre exécutable
 add_executable(my_app main.cpp)
@@ -480,7 +500,7 @@ Cette commande télécharge, configure et compile automatiquement CEF, en assura
 Si vous préférez un contrôle manuel sur la liaison et le déploiement :
 
 ```cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.4")
+CPMAddPackage("gh:ambroise-leclerc/CEF#main")
 
 # Créez votre exécutable
 add_executable(my_app main.cpp)
@@ -513,17 +533,17 @@ Ce package exporte les deux cibles nécessaires pour construire des applications
 Créez une application CEF avec fenêtre avec ces étapes simples :
 
 ```cmake
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.24)
 project(my_cef_app LANGUAGES CXX)
 
 # Ajouter le package CEF
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17d")
+CPMAddPackage("gh:ambroise-leclerc/CEF#main")
 
 # Créer votre exécutable
 add_executable(my_cef_app main.cpp)
 
-# Définir le standard C++ (CEF nécessite C++17)
-set_property(TARGET my_cef_app PROPERTY CXX_STANDARD 17)
+# Définir le standard C++ (CEF nécessite C++20)
+set_property(TARGET my_cef_app PROPERTY CXX_STANDARD 20)
 set_property(TARGET my_cef_app PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Lier les bibliothèques CEF - LES DEUX cibles sont requises
@@ -600,7 +620,7 @@ Vous pouvez utiliser la notation CPM.cmake non compacte pour définir des option
 ```cmake
 CPMAddPackage(
   NAME cef
-  GITHUB_REPOSITORY ambroise-leclerc/CEF  VERSION 137.0.17d
+  GITHUB_REPOSITORY ambroise-leclerc/CEF  GIT_TAG main
   OPTIONS
     "CEF_ROBUST_DOWNLOAD ON"         # Active le téléchargement robuste avec réessais et solutions de repli (par défaut : ON)
     "CEF_USE_MINIMAL_DIST ON"        # Télécharge la distribution minimale de CEF au lieu de la version complète (par défaut : OFF)
@@ -713,21 +733,21 @@ Ce packaging CEF supporte les plateformes suivantes :
 ### Prérequis de compilation
 
 #### Windows
-- Visual Studio 2019 ou ultérieur (outils C++)
-- CMake 3.27 ou ultérieur
+- Visual Studio 2022 ou ultérieur (outils C++)
+- CMake 3.24 ou ultérieur
 - Windows 10 SDK
 
 #### Linux
-- GCC ou Clang
-- CMake 3.27 ou ultérieur
+- GCC 10+ ou Clang avec support C++20
+- CMake 3.24 ou ultérieur
 
 #### macOS
-- Xcode ou Command Line Tools
-- CMake 3.27 ou ultérieur
+- Xcode 16+ et Command Line Tools (compilation sur macOS 14.5+)
+- CMake 3.24 ou ultérieur
 
 La détection de la plateforme est automatique lors de la configuration CMake, et la distribution binaire appropriée est téléchargée.
 
-**Version CEF actuelle** : 137.0.4+g8614a8d+chromium-137.0.7151.6
+**Version CEF actuelle** : 154.0.34+g14c5a08+chromium-154.0.8037.98
 
 Pour utiliser une autre version, modifiez la variable `CEF_VERSION` dans le fichier `CMakeLists.txt` principal, en veillant à la disponibilité multiplateforme.
 
@@ -735,9 +755,9 @@ Pour utiliser une autre version, modifiez la variable `CEF_VERSION` dans le fich
 - Système : Linux, macOS ou Windows (x64)
 - Compilateur C++ :
   - **Linux** : GCC 11 ou plus recommandé
-  - **macOS** : Xcode ou Command Line Tools
-  - **Windows** : Visual Studio 2019 ou ultérieur
-- [CMake](https://cmake.org/) 3.27 ou ultérieur (workflows : 3.27.9)
+  - **macOS** : Xcode 16+ et Command Line Tools (compilation sur macOS 14.5+)
+  - **Windows** : Visual Studio 2022 ou ultérieur
+- [CMake](https://cmake.org/) 3.24 ou ultérieur (workflows : 3.27.9)
 - Git
 
 ## Compilation et tests (pour les mainteneurs)

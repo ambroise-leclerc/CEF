@@ -1,5 +1,5 @@
 # Test script to verify CEF CPM integration works correctly
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.24)
 project(TestCEFCPM LANGUAGES CXX)
 
 # Add CPM.cmake
@@ -22,29 +22,29 @@ CPMAddPackage(
 )
 
 # Test that both targets are available
-if(TARGET CEF::cef)
-    message(STATUS "✅ CEF::cef target is available")
+if(TARGET cef)
+    message(STATUS "✅ cef target is available")
 else()
-    message(FATAL_ERROR "❌ CEF::cef target is NOT available")
+    message(FATAL_ERROR "❌ cef target is NOT available")
 endif()
 
-if(TARGET CEF::libcef_dll_wrapper)
-    message(STATUS "✅ CEF::libcef_dll_wrapper target is available")
+if(TARGET libcef_dll_wrapper)
+    message(STATUS "✅ libcef_dll_wrapper target is available")
 else()
-    message(FATAL_ERROR "❌ CEF::libcef_dll_wrapper target is NOT available")
+    message(FATAL_ERROR "❌ libcef_dll_wrapper target is NOT available")
 endif()
 
 # Create a test executable that links to both CEF targets
 add_executable(test_cef_integration ${CMAKE_CURRENT_SOURCE_DIR}/example_main.cpp)
 
-# Set C++ standard (CEF requires C++17)
-set_property(TARGET test_cef_integration PROPERTY CXX_STANDARD 17)
+# Set C++ standard (CEF requires C++20)
+set_property(TARGET test_cef_integration PROPERTY CXX_STANDARD 20)
 set_property(TARGET test_cef_integration PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Link CEF libraries - BOTH targets are required for CEF applications
 target_link_libraries(test_cef_integration PRIVATE 
-    CEF::cef                    # Main CEF interface
-    CEF::libcef_dll_wrapper     # C++ wrapper library (provides CefRefPtr, etc.)
+    cef                    # Main CEF interface
+    libcef_dll_wrapper     # C++ wrapper library (provides CefRefPtr, etc.)
 )
 
 # Platform-specific configuration

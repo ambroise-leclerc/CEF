@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.24)
 project(CEFSimpleExample)
 
 # Set C++ standard
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Add CPM for package management
@@ -68,8 +68,8 @@ add_executable(example_cef_app
     example_main.cpp
 )
 
-# Set C++ standard (CEF requires C++17)
-set_property(TARGET example_cef_app PROPERTY CXX_STANDARD 17)
+# Set C++ standard (CEF requires C++20)
+set_property(TARGET example_cef_app PROPERTY CXX_STANDARD 20)
 set_property(TARGET example_cef_app PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Platform-specific configuration
@@ -98,3 +98,9 @@ endif()
 if(TARGET libcef_dll_wrapper)
     message(STATUS "  - libcef_dll_wrapper target is available")
 endif()
+
+# Verify platform-specific runtime deployment without opening a browser.
+enable_testing()
+add_test(NAME cef_example_deployment
+    COMMAND simple_test
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:simple_test>")

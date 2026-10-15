@@ -28,10 +28,21 @@ function(_cef_set_deployment_variables)
         set(OS_MAC FALSE PARENT_SCOPE)
     endif()
     
-    # Set CEF binary and resource directories
+    # Set CEF binary and resource directories. On Windows and Linux the
+    # distribution keeps binaries in Release/ (or Debug/) and icudtl.dat, *.pak
+    # and locales/ in a sibling Resources/ directory. CEF_LIBRARY_DIR is used as
+    # the anchor because it is cached, unlike CEF_SOURCE_DIR in consuming projects.
     if(CEF_LIBRARY_DIR)
         set(CEF_BINARY_DIR "${CEF_LIBRARY_DIR}" PARENT_SCOPE)
-        set(CEF_RESOURCE_DIR "${CEF_LIBRARY_DIR}" PARENT_SCOPE)
+        get_filename_component(_cef_dist_root "${CEF_LIBRARY_DIR}" DIRECTORY)
+        set(_cef_resource_dir "${CEF_LIBRARY_DIR}")
+        foreach(candidate "${_cef_dist_root}/Resources" "${CEF_LIBRARY_DIR}/Resources")
+            if(EXISTS "${candidate}/icudtl.dat")
+                set(_cef_resource_dir "${candidate}")
+                break()
+            endif()
+        endforeach()
+        set(CEF_RESOURCE_DIR "${_cef_resource_dir}" PARENT_SCOPE)
     else()
         message(WARNING "CEF_LIBRARY_DIR not set. CEF deployment may not work correctly.")
     endif()
@@ -48,15 +59,17 @@ function(_cef_get_binary_files output_var)
             "libcef.dll"
             "chrome_elf.dll"
             "d3dcompiler_47.dll"
-            "libEGL.dll"
-            "libGLESv2.dll"
             "vk_swiftshader.dll"
             "vulkan-1.dll"
+            "v8_context_snapshot.bin"
         )
         # Optional files that may not exist in all CEF versions
         set(optional_files
+            "libEGL.dll"
+            "libGLESv2.dll"
             "dxcompiler.dll"
             "dxil.dll"
+            "vk_swiftshader_icd.json"
         )
         foreach(file ${optional_files})
             if(EXISTS "${CEF_BINARY_DIR}/${file}")
@@ -68,11 +81,22 @@ function(_cef_get_binary_files output_var)
         list(APPEND binary_files
             "libcef.so"
             "chrome-sandbox"
+            "v8_context_snapshot.bin"
         )
-        # Optional files
-        if(EXISTS "${CEF_BINARY_DIR}/libminigbm.so")
-            list(APPEND binary_files "libminigbm.so")
-        endif()
+        # Optional files that may not exist in all CEF versions
+        set(optional_files
+            "libEGL.so"
+            "libGLESv2.so"
+            "libvk_swiftshader.so"
+            "vk_swiftshader_icd.json"
+            "libvulkan.so.1"
+            "libminigbm.so"
+        )
+        foreach(file ${optional_files})
+            if(EXISTS "${CEF_BINARY_DIR}/${file}")
+                list(APPEND binary_files "${file}")
+            endif()
+        endforeach()
         
     elseif(OS_MAC)
         # macOS uses framework deployment, handled separately
@@ -94,7 +118,6 @@ function(_cef_get_resource_files output_var)
             "chrome_100_percent.pak"
             "chrome_200_percent.pak"
             "resources.pak"
-            "v8_context_snapshot.bin"
         )
     endif()
     
@@ -119,12 +142,9 @@ function(cef_deploy_runtime target_name)
     if(COMMAND SET_CEF_TARGET_OUT_DIR)
         SET_CEF_TARGET_OUT_DIR()
     else()
-        # Fallback for when CEF macros are not available
-        if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR MATCHES "Xcode")
-            set(CEF_TARGET_OUT_DIR "$<TARGET_FILE_DIR:${target_name}>")
-        else()
-            set(CEF_TARGET_OUT_DIR "$<TARGET_FILE_DIR:${target_name}>")
-        endif()
+        # Leave output placement to the target when upstream macros cannot
+        # select a directory; a TARGET_FILE_DIR self-reference is invalid.
+        set(CEF_TARGET_OUT_DIR "")
     endif()
     
     # Platform-specific deployment
@@ -145,8 +165,10 @@ function(_cef_deploy_linux target_name)
     set_target_properties(${target_name} PROPERTIES 
         INSTALL_RPATH "$ORIGIN"
         BUILD_WITH_INSTALL_RPATH TRUE
-        RUNTIME_OUTPUT_DIRECTORY ${CEF_TARGET_OUT_DIR}
     )
+    if(CEF_TARGET_OUT_DIR)
+        set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CEF_TARGET_OUT_DIR}")
+    endif()
     
     # Get file lists
     _cef_get_binary_files(binary_files)
@@ -196,12 +218,12 @@ function(_cef_deploy_linux target_name)
     endif()
     
     # Deploy Resources directory (if exists)
-    if(EXISTS "${CEF_RESOURCE_DIR}/Resources")
+    if(EXISTS "${CEF_RESOURCE_DIR}/icudtl.dat")
         add_custom_command(
             TARGET ${target_name}
             POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    "${CEF_RESOURCE_DIR}/Resources"
+                    "${CEF_RESOURCE_DIR}"
                     "$<TARGET_FILE_DIR:${target_name}>/Resources"
             VERBATIM
             COMMENT "Deploying CEF Resources directory"
@@ -210,7 +232,7 @@ function(_cef_deploy_linux target_name)
     
     # Set SUID permissions for chrome-sandbox
     if(COMMAND SET_LINUX_SUID_PERMISSIONS)
-        SET_LINUX_SUID_PERMISSIONS("${target_name}" "${CEF_TARGET_OUT_DIR}/chrome-sandbox")
+        SET_LINUX_SUID_PERMISSIONS("${target_name}" "$<TARGET_FILE_DIR:${target_name}>/chrome-sandbox")
     endif()
 endfunction()
 
@@ -281,12 +303,12 @@ function(_cef_deploy_windows target_name)
     endif()
     
     # Deploy Resources directory (if exists)
-    if(EXISTS "${CEF_RESOURCE_DIR}/Resources")
+    if(EXISTS "${CEF_RESOURCE_DIR}/icudtl.dat")
         add_custom_command(
             TARGET ${target_name}
             POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    "${CEF_RESOURCE_DIR}/Resources"
+                    "${CEF_RESOURCE_DIR}"
                     "$<TARGET_FILE_DIR:${target_name}>/Resources"
             VERBATIM
             COMMENT "Deploying CEF Resources directory"

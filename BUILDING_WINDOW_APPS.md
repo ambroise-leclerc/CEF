@@ -7,17 +7,17 @@ This package now exports both the main `cef` target and the `libcef_dll_wrapper`
 ### 1. Basic CMake Setup
 
 ```cmake
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.24)
 project(my_cef_app LANGUAGES CXX)
 
 # Add the CEF package
-CPMAddPackage("gh:ambroise-leclerc/CEF@137.0.17c")
+CPMAddPackage("gh:ambroise-leclerc/CEF#main")
 
 # Create your executable
 add_executable(my_cef_app main.cpp)
 
-# Set C++ standard (CEF requires C++17)
-set_property(TARGET my_cef_app PROPERTY CXX_STANDARD 17)
+# Set C++ standard (CEF requires C++20)
+set_property(TARGET my_cef_app PROPERTY CXX_STANDARD 20)
 set_property(TARGET my_cef_app PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Link CEF libraries

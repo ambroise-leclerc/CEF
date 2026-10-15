@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.24)
 project(cef_test LANGUAGES CXX)
 
 add_executable(cef_sanity_test cef_sanity_test.cpp)
 
 # Set C++ standard for sanity test
-set_property(TARGET cef_sanity_test PROPERTY CXX_STANDARD 17)
+set_property(TARGET cef_sanity_test PROPERTY CXX_STANDARD 20)
 set_property(TARGET cef_sanity_test PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # On Windows, ensure we use the same runtime library as CEF (static runtime)
@@ -45,7 +45,7 @@ endif()
 add_executable(cef_resources_test cef_resources_test.cpp)
 
 # Set C++ standard
-set_property(TARGET cef_resources_test PROPERTY CXX_STANDARD 17)
+set_property(TARGET cef_resources_test PROPERTY CXX_STANDARD 20)
 set_property(TARGET cef_resources_test PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # On Windows, ensure we use the same runtime library as CEF (static runtime)
@@ -127,7 +127,7 @@ endif()
 add_executable(cef_window_test cef_window_test.cpp)
 
 # Set C++ standard for window test
-set_property(TARGET cef_window_test PROPERTY CXX_STANDARD 17)
+set_property(TARGET cef_window_test PROPERTY CXX_STANDARD 20)
 set_property(TARGET cef_window_test PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # On Windows, ensure we use the same runtime library as CEF (static runtime)
@@ -183,28 +183,16 @@ else()
     
     # On Windows, copy CEF binaries and resources to the test output directory
     if(WIN32)
-        # Copy CEF DLLs
+        # Use CEF 154's runtime manifest, which no longer lists standalone
+        # libEGL/libGLESv2 DLLs and includes the Vulkan runtime files.
+        set(CEF_WINDOW_TEST_WINDOWS_BINARIES ${CEF_BINARY_FILES})
+        list(TRANSFORM CEF_WINDOW_TEST_WINDOWS_BINARIES PREPEND "${CEF_SOURCE_DIR}/Release/")
         add_custom_command(TARGET cef_window_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/$<CONFIG>/libcef.dll"
-                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/$<CONFIG>/chrome_elf.dll"
-                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/$<CONFIG>/d3dcompiler_47.dll"
-                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/$<CONFIG>/libEGL.dll"
-                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/$<CONFIG>/libGLESv2.dll"
-                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/$<CONFIG>/v8_context_snapshot.bin"
-                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/"
+                ${CEF_WINDOW_TEST_WINDOWS_BINARIES}
+                "$<TARGET_FILE_DIR:cef_window_test>/"
             VERBATIM)
-        
+
         # Copy CEF resources
         add_custom_command(TARGET cef_window_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -228,19 +216,15 @@ else()
                 "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/locales"
             VERBATIM)
     elseif(UNIX AND NOT APPLE)
-        # On Linux, copy CEF binaries and resources for the window test
+        # Deploy the upstream runtime manifest, including Vulkan files.
+        set(CEF_WINDOW_TEST_LINUX_BINARIES ${CEF_BINARY_FILES})
+        list(TRANSFORM CEF_WINDOW_TEST_LINUX_BINARIES PREPEND "${CEF_SOURCE_DIR}/Release/")
         add_custom_command(TARGET cef_window_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/Release/libcef.so"
-                "${CMAKE_CURRENT_BINARY_DIR}/"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/Release/chrome-sandbox"
-                "${CMAKE_CURRENT_BINARY_DIR}/"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/Release/v8_context_snapshot.bin"
+                ${CEF_WINDOW_TEST_LINUX_BINARIES}
                 "${CMAKE_CURRENT_BINARY_DIR}/"
             VERBATIM)
-        
+
         # Copy CEF resources
         add_custom_command(TARGET cef_window_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different

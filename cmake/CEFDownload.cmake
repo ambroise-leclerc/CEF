@@ -186,6 +186,11 @@ function(cef_download_and_extract)
     message(STATUS "CEF Platform: ${CEF_PLATFORM}")
     message(STATUS "CEF URL: ${CEF_URL}")
     
+    # Populate only the binary distribution. Its top-level CMakeLists builds
+    # upstream sample apps; this package configures the wrapper itself instead.
+    # SOURCE_SUBDIR deliberately names a directory without a CMakeLists.txt so
+    # FetchContent_MakeAvailable works with CMake 4 / CMP0169 as well.
+
     # Choose source based on whether local archive is provided
     if(CEF_LOCAL_ARCHIVE_PATH AND EXISTS "${CEF_LOCAL_ARCHIVE_PATH}")
         message(STATUS "Using local CEF archive: ${CEF_LOCAL_ARCHIVE_PATH}")
@@ -193,8 +198,9 @@ function(cef_download_and_extract)
             cef_binaries
             URL      ${CEF_LOCAL_ARCHIVE_PATH}
             DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            SOURCE_SUBDIR _cef_binary_distribution_only
         )
-    elseif(CEF_ROBUST_DOWNLOAD)
+    elseif(CEF_ROBUST_DOWNLOAD AND NOT FETCHCONTENT_SOURCE_DIR_CEF_BINARIES)
         message(STATUS "Using robust download strategy for CEF...")
         message(STATUS "This may take several minutes for large downloads...")
         
@@ -206,13 +212,16 @@ function(cef_download_and_extract)
             cef_binaries
             URL      ${CEF_LOCAL_ARCHIVE}
             DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            SOURCE_SUBDIR _cef_binary_distribution_only
         )
     else()
-        # Standard download with reasonable timeout
+        # Standard download with reasonable timeout. A FetchContent source
+        # override is honored here without first downloading a second archive.
         FetchContent_Declare(
             cef_binaries
             URL      ${CEF_URL}
             DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            SOURCE_SUBDIR _cef_binary_distribution_only
             TIMEOUT  600  # 10 minutes timeout for large file
         )
     endif()
@@ -222,7 +231,7 @@ function(cef_download_and_extract)
     FetchContent_GetProperties(cef_binaries)
     if(NOT cef_binaries_POPULATED)
         message(STATUS "Extracting CEF binaries...")
-        FetchContent_Populate(cef_binaries)
+        FetchContent_MakeAvailable(cef_binaries)
         message(STATUS "CEF binaries extracted to: ${cef_binaries_SOURCE_DIR}")
     endif()
     

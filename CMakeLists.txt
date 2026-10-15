@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.24)
 project(CEF LANGUAGES C CXX)
 
 # Set CEF version
-set(CEF_VERSION "137.0.17+gf354b0e+chromium-137.0.7151.104")
+set(CEF_VERSION "154.0.34+g14c5a08+chromium-154.0.8037.98")
 
 # Include all CMake modules
 include(cmake/CEFOptions.cmake)
@@ -33,8 +33,8 @@ include(cmake/CEFInstall.cmake)
 # Setup deployment
 include(cmake/CEFDeployment.cmake)
 
-# Set the C++ standard to 17
-set(CMAKE_CXX_STANDARD 17)
+# Set the C++ standard to 20
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Remove -v from CXX flags
