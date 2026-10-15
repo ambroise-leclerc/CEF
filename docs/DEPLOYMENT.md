@@ -50,14 +50,15 @@ cef_deploy_runtime(MyApp)
 ## Platform-Specific Behavior
 
 ### Windows
-- Deploys all required DLLs to executable directory
-- Copies resource files (PAK files, ICU data, etc.)
-- Creates locales/ and Resources/ directories
+- Deploys DLLs and `v8_context_snapshot.bin` from the distribution's `Release/` directory
+- Deploys `icudtl.dat`, `*.pak` and `locales/` from the distribution's `Resources/` directory
+- Resources are placed both next to the executable (CEF's default lookup) and in `Resources/` (paths returned by `cef_get_settings_paths()`)
 
 ### Linux
 - Sets $ORIGIN rpath for library loading
-- Deploys shared libraries and resources
-- Handles chrome-sandbox SUID permissions
+- Deploys `libcef.so`, `chrome-sandbox`, `v8_context_snapshot.bin` and, when present, the ANGLE/SwiftShader libraries from `Release/`
+- Deploys resources from `Resources/` with the same layout as on Windows
+- Prints the `sudo` command that gives `chrome-sandbox` its SUID bit; nothing is run with elevated privileges at build time. Run it yourself, or set `settings.no_sandbox = true`
 
 ### macOS
 - Deploys CEF framework to Frameworks/ directory

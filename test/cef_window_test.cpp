@@ -4,6 +4,13 @@
 #include <list>
 #include <functional>
 #include <filesystem>
+#include <cstdint>
+#include <cstdlib>
+#include <optional>
+#include <random>
+#include <string>
+#include <system_error>
+#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -234,9 +241,88 @@ private:
     IMPLEMENT_REFCOUNTING(RealWindowTestApp);
 };
 
-int main(int argc, char* argv[]) {    std::cout << "Starting REAL CEF Window Test..." << std::endl;
-    std::cout << "CEF Version: " << CEF_VERSION << std::endl;
+// Environment variable through which the browser process hands its profile
+// directory to the CEF subprocesses of the same run (they inherit it).
+constexpr const char* kProfileDirEnvVar = "CEF_WINDOW_TEST_PROFILE_DIR";
 
+static void SetProfileDirEnv(const std::string& value) {
+#ifdef _WIN32
+    _putenv_s(kProfileDirEnvVar, value.c_str());
+#else
+    setenv(kProfileDirEnvVar, value.c_str(), 1);
+#endif
+}
+
+// Owns a unique per-run profile directory under the system temp directory and
+// removes it on destruction, so failure paths are cleaned up as well.
+class TestProfileDir {
+public:
+    static std::optional<TestProfileDir> Create() {
+        std::error_code ec;
+        const std::filesystem::path temp_dir = std::filesystem::temp_directory_path(ec);
+        if (ec) {
+            std::cerr << "❌ Cannot determine temp directory: " << ec.message() << std::endl;
+            return std::nullopt;
+        }
+
+        std::random_device rd;
+        std::mt19937_64 rng((static_cast<std::uint64_t>(rd()) << 32) ^ rd() ^
+            static_cast<std::uint64_t>(std::chrono::steady_clock::now().time_since_epoch().count()));
+        for (int attempt = 0; attempt < 16; ++attempt) {
+            const std::filesystem::path candidate =
+                temp_dir / ("cef_window_test_" + std::to_string(rng()));
+            // create_directory returns false when the path already exists,
+            // which guarantees this run never reuses another run's profile.
+            if (std::filesystem::create_directory(candidate, ec)) {
+                return TestProfileDir(candidate);
+            }
+            if (ec) {
+                std::cerr << "❌ Cannot create profile directory " << candidate
+                          << ": " << ec.message() << std::endl;
+                return std::nullopt;
+            }
+        }
+        std::cerr << "❌ Could not find an unused profile directory name in " << temp_dir << std::endl;
+        return std::nullopt;
+    }
+
+    TestProfileDir(TestProfileDir&& other) noexcept : path_(std::move(other.path_)) {
+        other.path_.clear();
+    }
+    TestProfileDir(const TestProfileDir&) = delete;
+    TestProfileDir& operator=(const TestProfileDir&) = delete;
+    TestProfileDir& operator=(TestProfileDir&&) = delete;
+
+    ~TestProfileDir() {
+        if (path_.empty()) {
+            return;
+        }
+        std::error_code ec;
+        std::filesystem::remove_all(path_, ec);
+        if (ec) {
+            std::cerr << "⚠️ Failed to remove profile directory " << path_
+                      << ": " << ec.message() << std::endl;
+        }
+    }
+
+    const std::filesystem::path& path() const { return path_; }
+
+private:
+    explicit TestProfileDir(std::filesystem::path path) : path_(std::move(path)) {}
+
+    std::filesystem::path path_;
+};
+
+static bool IsSubprocess(int argc, char* argv[]) {
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]).rfind("--type=", 0) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int main(int argc, char* argv[]) {
 #if HAS_CEF_LIBRARY_LOADER
     // Load the CEF framework library at runtime instead of linking directly
     // as required by the macOS sandbox implementation.
@@ -246,6 +332,31 @@ int main(int argc, char* argv[]) {    std::cout << "Starting REAL CEF Window Tes
         return 1;
     }
 #endif
+
+    // CEF subprocesses (renderer, GPU, utility...) relaunch this executable with
+    // --type=. They must not create or delete a profile: they reuse the one the
+    // browser process published in the environment and on the command line.
+    if (IsSubprocess(argc, argv)) {
+#ifdef _WIN32
+        CefMainArgs subprocess_args(GetModuleHandle(nullptr));
+#else
+        CefMainArgs subprocess_args(argc, argv);
+#endif
+        return CefExecuteProcess(subprocess_args, nullptr, nullptr);
+    }
+
+    std::cout << "Starting REAL CEF Window Test..." << std::endl;
+    std::cout << "CEF Version: " << CEF_VERSION << std::endl;
+
+    // Unique profile for this run: concurrent runs never share user data, and
+    // the directory is removed when this scope exits (success or failure).
+    std::optional<TestProfileDir> profile = TestProfileDir::Create();
+    if (!profile) {
+        return 1;
+    }
+    const std::string profile_dir = profile->path().string();
+    SetProfileDirEnv(profile_dir);
+    std::cout << "Using isolated profile directory: " << profile_dir << std::endl;
 
     // Create a modified argument list with additional switches to prevent keychain access
     std::vector<std::string> args;
@@ -262,7 +373,7 @@ int main(int argc, char* argv[]) {    std::cout << "Starting REAL CEF Window Tes
     
     // Additional switches to prevent keychain access
     args.push_back("--disable-web-security");
-    args.push_back("--user-data-dir=/tmp/cef_window_test_user_data");  // Required when using --disable-web-security
+    args.push_back("--user-data-dir=" + profile_dir);  // Required when using --disable-web-security
     args.push_back("--disable-features=VizDisplayCompositor");
     args.push_back("--use-mock-keychain");
     args.push_back("--disable-component-update");
@@ -308,13 +419,8 @@ int main(int argc, char* argv[]) {    std::cout << "Starting REAL CEF Window Tes
     CefString(&settings.locales_dir_path) = current_dir + "/locales";
     
     CefString(&settings.locale) = "en-US";
-#ifdef _WIN32
-    CefString(&settings.root_cache_path) = "C:\\temp\\cef_real_window_test";
-    CefString(&settings.cache_path) = "C:\\temp\\cef_real_window_test\\cache";
-#else
-    CefString(&settings.root_cache_path) = "/tmp/cef_real_window_test";
-    CefString(&settings.cache_path) = "/tmp/cef_real_window_test/cache";
-#endif
+    CefString(&settings.root_cache_path) = profile_dir;
+    CefString(&settings.cache_path) = (profile->path() / "cache").string();
 
     std::cout << "Initializing CEF for real window creation..." << std::endl;
     if (!CefInitialize(main_args, settings, app, nullptr)) {
@@ -329,7 +435,9 @@ int main(int argc, char* argv[]) {    std::cout << "Starting REAL CEF Window Tes
     CefRunMessageLoop();
 
     std::cout << "Shutting down CEF..." << std::endl;
+    // All CEF processes have exited once CefShutdown returns: release the profile now.
     CefShutdown();
+    profile.reset();
 
     std::cout << "\n=== REAL CEF Window Test Summary ===" << std::endl;
     std::cout << "✅ REAL CEF Window Test completed successfully!" << std::endl;
