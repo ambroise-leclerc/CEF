@@ -170,67 +170,10 @@ function(_cef_deploy_linux target_name)
         set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CEF_TARGET_OUT_DIR}")
     endif()
     
-    # Get file lists
-    _cef_get_binary_files(binary_files)
-    _cef_get_resource_files(resource_files)
+    _cef_deploy_runtime_files(${target_name})
     
-    # Deploy binary files using fallback approach (more reliable)
-    if(binary_files)
-        foreach(file ${binary_files})
-            add_custom_command(
-                TARGET ${target_name}
-                POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                        "${CEF_BINARY_DIR}/${file}"
-                        "$<TARGET_FILE_DIR:${target_name}>/${file}"
-                VERBATIM
-                COMMENT "Deploying CEF binary: ${file}"
-            )
-        endforeach()
-    endif()
-    
-    # Deploy resource files using fallback approach (more reliable)
-    if(resource_files)
-        foreach(file ${resource_files})
-            add_custom_command(
-                TARGET ${target_name}
-                POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                        "${CEF_RESOURCE_DIR}/${file}"
-                        "$<TARGET_FILE_DIR:${target_name}>/${file}"
-                VERBATIM
-                COMMENT "Deploying CEF resource: ${file}"
-            )
-        endforeach()
-    endif()
-    
-    # Deploy locales directory
-    if(EXISTS "${CEF_RESOURCE_DIR}/locales")
-        add_custom_command(
-            TARGET ${target_name}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    "${CEF_RESOURCE_DIR}/locales"
-                    "$<TARGET_FILE_DIR:${target_name}>/locales"
-            VERBATIM
-            COMMENT "Deploying CEF locales directory"
-        )
-    endif()
-    
-    # Deploy Resources directory (if exists)
-    if(EXISTS "${CEF_RESOURCE_DIR}/icudtl.dat")
-        add_custom_command(
-            TARGET ${target_name}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    "${CEF_RESOURCE_DIR}"
-                    "$<TARGET_FILE_DIR:${target_name}>/Resources"
-            VERBATIM
-            COMMENT "Deploying CEF Resources directory"
-        )
-    endif()
-    
-    # Set SUID permissions for chrome-sandbox
+    # Print the manual sudo command that grants chrome-sandbox its SUID bit
+    # (CEF's macro only echoes it; nothing is run with elevated privileges).
     if(COMMAND SET_LINUX_SUID_PERMISSIONS)
         SET_LINUX_SUID_PERMISSIONS("${target_name}" "$<TARGET_FILE_DIR:${target_name}>/chrome-sandbox")
     endif()
@@ -255,65 +198,28 @@ endfunction()
 
 # Windows-specific deployment
 function(_cef_deploy_windows target_name)
-    # Get file lists
+    _cef_deploy_runtime_files(${target_name})
+endfunction()
+
+# Copy binaries, resources and locales next to the executable (Windows/Linux).
+# Resources are placed both in the executable directory, where CEF looks by
+# default, and in Resources/, matching the paths from cef_get_settings_paths().
+function(_cef_deploy_runtime_files target_name)
     _cef_get_binary_files(binary_files)
     _cef_get_resource_files(resource_files)
-    
-    # Deploy binary files using fallback approach (more reliable)
-    if(binary_files)
-        foreach(file ${binary_files})
-            add_custom_command(
-                TARGET ${target_name}
-                POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                        "${CEF_BINARY_DIR}/${file}"
-                        "$<TARGET_FILE_DIR:${target_name}>/${file}"
-                VERBATIM
-                COMMENT "Deploying CEF binary: ${file}"
-            )
-        endforeach()
-    endif()
-    
-    # Deploy resource files using fallback approach (more reliable)
-    if(resource_files)
-        foreach(file ${resource_files})
-            add_custom_command(
-                TARGET ${target_name}
-                POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                        "${CEF_RESOURCE_DIR}/${file}"
-                        "$<TARGET_FILE_DIR:${target_name}>/${file}"
-                VERBATIM
-                COMMENT "Deploying CEF resource: ${file}"
-            )
-        endforeach()
-    endif()
-    
-    # Deploy locales directory
-    if(EXISTS "${CEF_RESOURCE_DIR}/locales")
-        add_custom_command(
-            TARGET ${target_name}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    "${CEF_RESOURCE_DIR}/locales"
-                    "$<TARGET_FILE_DIR:${target_name}>/locales"
-            VERBATIM
-            COMMENT "Deploying CEF locales directory"
-        )
-    endif()
-    
-    # Deploy Resources directory (if exists)
-    if(EXISTS "${CEF_RESOURCE_DIR}/icudtl.dat")
-        add_custom_command(
-            TARGET ${target_name}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    "${CEF_RESOURCE_DIR}"
-                    "$<TARGET_FILE_DIR:${target_name}>/Resources"
-            VERBATIM
-            COMMENT "Deploying CEF Resources directory"
-        )
-    endif()
+    list(TRANSFORM binary_files PREPEND "${CEF_BINARY_DIR}/")
+    list(TRANSFORM resource_files PREPEND "${CEF_RESOURCE_DIR}/")
+
+    set(out_dir "$<TARGET_FILE_DIR:${target_name}>")
+    add_custom_command(
+        TARGET ${target_name}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${binary_files} ${resource_files} "${out_dir}/"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CEF_RESOURCE_DIR}/locales" "${out_dir}/locales"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CEF_RESOURCE_DIR}" "${out_dir}/Resources"
+        VERBATIM
+        COMMENT "Deploying CEF runtime files for ${target_name}"
+    )
 endfunction()
 
 # Convenience function to configure a CEF application target

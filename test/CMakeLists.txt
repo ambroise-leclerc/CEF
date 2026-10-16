@@ -216,36 +216,24 @@ else()
                 "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/locales"
             VERBATIM)
     elseif(UNIX AND NOT APPLE)
-        # Deploy the upstream runtime manifest, including Vulkan files.
+        # On Linux, deploy CEF binaries (Release/) and resources (Resources/)
+        # next to the window test in a single post-build step. cef_deploy_runtime()
+        # is not reused here: it moves the executable to a per-configuration
+        # output directory and applies CEF's compile flags, while CTest runs the
+        # test from this directory.
         set(CEF_WINDOW_TEST_LINUX_BINARIES ${CEF_BINARY_FILES})
+        set(CEF_WINDOW_TEST_LINUX_RESOURCES icudtl.dat chrome_100_percent.pak chrome_200_percent.pak resources.pak)
         list(TRANSFORM CEF_WINDOW_TEST_LINUX_BINARIES PREPEND "${CEF_SOURCE_DIR}/Release/")
+        list(TRANSFORM CEF_WINDOW_TEST_LINUX_RESOURCES PREPEND "${CEF_SOURCE_DIR}/Resources/")
         add_custom_command(TARGET cef_window_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${CEF_WINDOW_TEST_LINUX_BINARIES}
+                ${CEF_WINDOW_TEST_LINUX_RESOURCES}
                 "${CMAKE_CURRENT_BINARY_DIR}/"
-            VERBATIM)
-
-        # Copy CEF resources
-        add_custom_command(TARGET cef_window_test POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/Resources/icudtl.dat"
-                "${CMAKE_CURRENT_BINARY_DIR}/"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/Resources/chrome_100_percent.pak"
-                "${CMAKE_CURRENT_BINARY_DIR}/"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/Resources/chrome_200_percent.pak"
-                "${CMAKE_CURRENT_BINARY_DIR}/"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CEF_SOURCE_DIR}/Resources/resources.pak"
-                "${CMAKE_CURRENT_BINARY_DIR}/"
-            VERBATIM)
-        
-        # Copy locales directory
-        add_custom_command(TARGET cef_window_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
                 "${CEF_SOURCE_DIR}/Resources/locales"
                 "${CMAKE_CURRENT_BINARY_DIR}/locales"
+            COMMENT "Deploying CEF runtime files for cef_window_test"
             VERBATIM)
     endif()
 endif()
