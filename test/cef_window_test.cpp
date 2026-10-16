@@ -240,6 +240,14 @@ private:
     IMPLEMENT_REFCOUNTING(RealWindowTestApp);
 };
 
+// UTF-8 form of a path, as CefString(std::string) expects. path::string() uses
+// the active code page under MSVC: it would corrupt non-ASCII characters (an
+// accented user name in the temp directory) or throw if they don't fit.
+static std::string PathToUtf8(const std::filesystem::path& path) {
+    const std::u8string utf8 = path.u8string();
+    return std::string(utf8.begin(), utf8.end());
+}
+
 // Owns a unique per-run profile directory under the system temp directory and
 // removes it on destruction, so failure paths are cleaned up as well.
 class TestProfileDir {
@@ -264,12 +272,12 @@ public:
                 return TestProfileDir(candidate);
             }
             if (ec) {
-                std::cerr << "❌ Cannot create profile directory " << candidate
+                std::cerr << "❌ Cannot create profile directory " << PathToUtf8(candidate)
                           << ": " << ec.message() << std::endl;
                 return std::nullopt;
             }
         }
-        std::cerr << "❌ Could not find an unused profile directory name in " << temp_dir << std::endl;
+        std::cerr << "❌ Could not find an unused profile directory name in " << PathToUtf8(temp_dir) << std::endl;
         return std::nullopt;
     }
 
@@ -287,7 +295,7 @@ public:
         std::error_code ec;
         std::filesystem::remove_all(path_, ec);
         if (ec) {
-            std::cerr << "⚠️ Failed to remove profile directory " << path_
+            std::cerr << "⚠️ Failed to remove profile directory " << PathToUtf8(path_)
                       << ": " << ec.message() << std::endl;
         }
     }
@@ -341,7 +349,7 @@ int main(int argc, char* argv[]) {
     if (!profile) {
         return 1;
     }
-    const std::string profile_dir = profile->path().string();
+    const std::string profile_dir = PathToUtf8(profile->path());
     std::cout << "Using isolated profile directory: " << profile_dir << std::endl;
 
     // Create a modified argument list with additional switches to prevent keychain access
@@ -400,13 +408,13 @@ int main(int argc, char* argv[]) {
     settings.no_sandbox = true;
     
     // Set resource directory paths for Linux using absolute paths
-    std::string current_dir = std::filesystem::current_path().string();
+    std::string current_dir = PathToUtf8(std::filesystem::current_path());
     CefString(&settings.resources_dir_path) = current_dir;
     CefString(&settings.locales_dir_path) = current_dir + "/locales";
     
     CefString(&settings.locale) = "en-US";
     CefString(&settings.root_cache_path) = profile_dir;
-    CefString(&settings.cache_path) = (profile->path() / "cache").string();
+    CefString(&settings.cache_path) = PathToUtf8(profile->path() / "cache");
 
     std::cout << "Initializing CEF for real window creation..." << std::endl;
     if (!CefInitialize(main_args, settings, app, nullptr)) {
