@@ -59,6 +59,17 @@ function(cef_verify_installation)
         message(FATAL_ERROR "CEF download failed or CEF headers not found. Please check the CEF version and platform compatibility.")
     endif()
     
+    # Reject stale cached distributions or an unrelated local archive before
+    # compiling against headers that do not match the package's pinned version.
+    file(STRINGS "${CEF_SOURCE_DIR}/include/cef_version.h" _cef_version_line
+        REGEX "^#define[ \t]+CEF_VERSION[ \t]+\"")
+    if(NOT _cef_version_line MATCHES "\"([^\"]+)\"")
+        message(FATAL_ERROR "Could not read CEF_VERSION from the downloaded headers")
+    endif()
+    if(NOT "${CMAKE_MATCH_1}" STREQUAL "${CEF_VERSION}")
+        message(FATAL_ERROR "CEF distribution version mismatch: expected ${CEF_VERSION}, found ${CMAKE_MATCH_1}. Use a matching archive or clear the cached distribution.")
+    endif()
+
     # Debug: Show CEF source directory contents if requested
     if(DEBUG_MODE)
         message(STATUS "CEF source directory: ${CEF_SOURCE_DIR}")
@@ -231,6 +242,7 @@ endfunction()
 function(cef_create_target)
     # Create the main CEF interface library
     add_library(cef INTERFACE)
+    target_compile_features(cef INTERFACE cxx_std_20)
     
     if(APPLE)
         _cef_configure_macos_target()

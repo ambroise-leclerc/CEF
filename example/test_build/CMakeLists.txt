@@ -1,5 +1,5 @@
 # Test CMakeLists.txt to verify CEF CPM integration works correctly
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.24)
 project(TestCEFCPM LANGUAGES CXX)
 
 # Add CPM.cmake
@@ -47,8 +47,8 @@ endif()
 # Create a test executable that links to both CEF targets
 add_executable(test_cef_integration ../example_main.cpp)
 
-# Set C++ standard (CEF requires C++17)
-set_property(TARGET test_cef_integration PROPERTY CXX_STANDARD 17)
+# Set C++ standard (CEF requires C++20)
+set_property(TARGET test_cef_integration PROPERTY CXX_STANDARD 20)
 set_property(TARGET test_cef_integration PROPERTY CXX_STANDARD_REQUIRED ON)
 
 # Link CEF libraries - BOTH targets are required for CEF applications

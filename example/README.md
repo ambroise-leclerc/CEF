@@ -12,8 +12,8 @@ This example demonstrates the new automated deployment functionality of the CEF 
 ## Building the Example
 
 ### Prerequisites
-- CMake 3.15 or later
-- C++ compiler (Visual Studio 2019+ on Windows, GCC/Clang on Linux/macOS)
+- CMake 3.24 or later
+- C++ compiler (Visual Studio 2022+ on Windows, GCC/Clang on Linux/macOS)
 
 ### Build Steps
 

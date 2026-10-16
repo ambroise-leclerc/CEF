@@ -36,6 +36,18 @@ if(NOT CEF_WRAPPER_BUILD_SKIP)
     set(ForceLoadWrapperStaticLibFile "$<TARGET_FILE:${CEF_WRAPPER_STATIC_LIBRARY_TARGET}>" CACHE INTERNAL "Path to the libcef_dll_wrapper static library for -force_load (using generator expression)")
     message(STATUS "CEF Wrapper static library target found: ${CEF_WRAPPER_STATIC_LIBRARY_TARGET}")
     
+    # CEF 154 headers require C++20, including for direct wrapper consumers.
+    target_compile_features(${CEF_WRAPPER_STATIC_LIBRARY_TARGET} PUBLIC cxx_std_20)
+
+    # Match the wrapper's selected API in consumers. In particular, upstream
+    # defaults to CEF_API_VERSION_LAST on Windows with USE_SANDBOX enabled.
+    foreach(definition IN LISTS CEF_COMPILER_DEFINES)
+      if(definition MATCHES "^CEF_API_VERSION=")
+        target_compile_definitions(cef INTERFACE "${definition}")
+        target_compile_definitions(${CEF_WRAPPER_STATIC_LIBRARY_TARGET} INTERFACE "${definition}")
+      endif()
+    endforeach()
+
     # Configure the actual static library target for installation and export
     # Add interface include directories so consumers can use the headers
     target_include_directories(${CEF_WRAPPER_STATIC_LIBRARY_TARGET} INTERFACE
