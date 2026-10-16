@@ -4,6 +4,7 @@
 #include <list>
 #include <functional>
 #include <filesystem>
+#include <string>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -234,9 +235,16 @@ private:
     IMPLEMENT_REFCOUNTING(RealWindowTestApp);
 };
 
-int main(int argc, char* argv[]) {    std::cout << "Starting REAL CEF Window Test..." << std::endl;
-    std::cout << "CEF Version: " << CEF_VERSION << std::endl;
+static bool IsSubprocess(int argc, char* argv[]) {
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]).rfind("--type=", 0) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
 
+int main(int argc, char* argv[]) {
 #if HAS_CEF_LIBRARY_LOADER
     // Load the CEF framework library at runtime instead of linking directly
     // as required by the macOS sandbox implementation.
@@ -246,6 +254,21 @@ int main(int argc, char* argv[]) {    std::cout << "Starting REAL CEF Window Tes
         return 1;
     }
 #endif
+
+    // CEF subprocesses (renderer, GPU, utility...) relaunch this executable with
+    // --type=. They must run CefExecuteProcess instead of initializing a second
+    // browser process.
+    if (IsSubprocess(argc, argv)) {
+#ifdef _WIN32
+        CefMainArgs subprocess_args(GetModuleHandle(nullptr));
+#else
+        CefMainArgs subprocess_args(argc, argv);
+#endif
+        return CefExecuteProcess(subprocess_args, nullptr, nullptr);
+    }
+
+    std::cout << "Starting REAL CEF Window Test..." << std::endl;
+    std::cout << "CEF Version: " << CEF_VERSION << std::endl;
 
     // Create a modified argument list with additional switches to prevent keychain access
     std::vector<std::string> args;
