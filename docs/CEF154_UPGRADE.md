@@ -43,13 +43,11 @@ in the [upstream index](https://cef-builds.spotifycdn.com/index.json) checked on
 The sanity test now compares the loaded runtime's eight version components with
 its build headers and fails if the macOS framework cannot be loaded.
 
-## Release validation still required
+## Release
 
 The workflows cover standard and minimal distributions on Linux, macOS and
-Windows, including compilation of the examples and their deployment test.
-Windows and Linux compilation/runtime tests have not been executed locally;
-archive availability does not establish compatibility on those platforms.
+Windows, including compilation of the examples and their deployment test. They
+passed on `main` for PR #37 and PR #38, which also fixed the window test's
+subprocess dispatch on Windows (#37) and isolated its profile per run (#26).
 
-After those CI jobs pass, publish the package tag/release and replace the
-README's development `main` references with that immutable release tag. No new
-release has been published by this change.
+The package is published as tag `v154.0.34`; the README references that tag.
