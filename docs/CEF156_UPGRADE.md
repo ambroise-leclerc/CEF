@@ -1,4 +1,4 @@
-# CEF 156 upgrade (#41)
+# CEF 156 upgrade
 
 The package pins `156.0.28+g57389f0+chromium-156.0.8078.88`, the newest
 stable CEF version common to all seven supported platform/architecture variants
