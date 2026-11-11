@@ -70,6 +70,8 @@ CPMAddPackage(
 | `CEF_LOCAL_ARCHIVE_PATH` | empty | Use a CEF archive already on disk instead of downloading it. |
 | `FETCHCONTENT_SOURCE_DIR_CEF_BINARIES` | empty | Reuse an already extracted CEF distribution (no download at all). |
 | `CEF_WRAPPER_BUILD_SKIP` | `OFF` | Do not build `libcef_dll_wrapper`. |
+| `CEF_PLATFORM` | from target | Override the archive platform (`linux64`, `linuxarm64`, `macosx64`, `macosarm64`, `windows64`, `windowsarm64`, `windows32`). By default it is derived from the target (`CMAKE_SYSTEM_PROCESSOR`, `CMAKE_OSX_ARCHITECTURES`, generator platform), so cross-compiling works. |
+| `PROJECT_ARCH` | from `CEF_PLATFORM` | Architecture passed to the SDK (`x86_64`, `arm64`, `x86`); a user-provided value is kept. |
 | `api_version` | upstream default | CEF API version, e.g. `-Dapi_version=15400`. The wrapper's choice is propagated to consumers. |
 
 The configured CEF version is checked against the distribution's headers: a
@@ -344,6 +346,8 @@ CPMAddPackage(
 | `CEF_LOCAL_ARCHIVE_PATH` | vide | Utilise une archive CEF déjà présente au lieu de la télécharger. |
 | `FETCHCONTENT_SOURCE_DIR_CEF_BINARIES` | vide | Réutilise une distribution CEF déjà extraite (aucun téléchargement). |
 | `CEF_WRAPPER_BUILD_SKIP` | `OFF` | Ne compile pas `libcef_dll_wrapper`. |
+| `CEF_PLATFORM` | selon la cible | Force la plateforme de l'archive (`linux64`, `linuxarm64`, `macosx64`, `macosarm64`, `windows64`, `windowsarm64`, `windows32`). Par défaut elle est déduite de la cible (`CMAKE_SYSTEM_PROCESSOR`, `CMAKE_OSX_ARCHITECTURES`, plateforme du générateur), ce qui permet la compilation croisée. |
+| `PROJECT_ARCH` | selon `CEF_PLATFORM` | Architecture transmise au SDK (`x86_64`, `arm64`, `x86`) ; une valeur fournie par l'utilisateur est conservée. |
 | `api_version` | défaut amont | Version de l'API CEF, par ex. `-Dapi_version=15400`. Le choix du wrapper est propagé aux consommateurs. |
 
 La version CEF configurée est comparée aux en-têtes de la distribution : une
