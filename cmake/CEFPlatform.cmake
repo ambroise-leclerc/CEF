@@ -1,49 +1,87 @@
 # CEFPlatform.cmake
 # Platform detection, library finding, and target creation
 
-# Detect platform and set CEF_PLATFORM
-if(APPLE)
-    execute_process(
-        COMMAND uname -m
-        OUTPUT_VARIABLE MACHINE_ARCH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(MACHINE_ARCH STREQUAL "arm64")
-        set(CEF_PLATFORM "macosarm64")
-        message(STATUS "Detected Apple Silicon Mac - using ARM64 CEF binary (macosarm64)")
-    else()
-        set(CEF_PLATFORM "macosx64")
-        message(STATUS "Detected Intel Mac - using x64 CEF binary")
+# Platform detection. The platform is derived from the *target* (not the host),
+# so cross-compiling selects the right archive. It can be overridden with
+# -DCEF_PLATFORM=<linux64|linuxarm64|macosx64|macosarm64|windows64|windowsarm64|windows32>.
+set(_cef_valid_platforms linux64 linuxarm64 macosx64 macosarm64 windows64 windowsarm64 windows32)
+
+# Normalized target architecture: "arm64", "x86_64" or "x86" (or the raw value if unknown).
+function(_cef_detect_target_arch out_var)
+    set(_arch "")
+    if(APPLE AND CMAKE_OSX_ARCHITECTURES)
+        list(GET CMAKE_OSX_ARCHITECTURES 0 _arch)
+    elseif(WIN32)
+        if(CMAKE_GENERATOR_PLATFORM)
+            set(_arch "${CMAKE_GENERATOR_PLATFORM}")
+        elseif(CMAKE_CXX_COMPILER_ARCHITECTURE_ID)
+            set(_arch "${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}")
+        endif()
     endif()
+    if(NOT _arch)
+        if(CMAKE_SYSTEM_PROCESSOR)
+            set(_arch "${CMAKE_SYSTEM_PROCESSOR}")
+        else()
+            set(_arch "${CMAKE_HOST_SYSTEM_PROCESSOR}")
+        endif()
+    endif()
+    string(TOLOWER "${_arch}" _arch)
+    if(_arch MATCHES "^(arm64|aarch64|arm64ec)$")
+        set(_arch "arm64")
+    elseif(_arch MATCHES "^(x86_64|amd64|x64)$")
+        set(_arch "x86_64")
+    elseif(_arch MATCHES "^(x86|i[3-6]86|win32)$")
+        set(_arch "x86")
+    endif()
+    set(${out_var} "${_arch}" PARENT_SCOPE)
+endfunction()
+
+_cef_detect_target_arch(CEF_TARGET_ARCH)
+
+if(APPLE)
+    set(_cef_family "macos")
     set(CEF_LIBRARY_EXTENSION "dylib")
 elseif(WIN32)
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64" OR CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
-            set(CEF_PLATFORM "windowsarm64")
-            message(STATUS "Detected Windows ARM64 - using windowsarm64 CEF binary")
-        else()
-            set(CEF_PLATFORM "windows64")
-            message(STATUS "Detected Windows x64 - using windows64 CEF binary")
-        endif()
-    else()
-        set(CEF_PLATFORM "windows32")
-        message(STATUS "Detected Windows x86 - using windows32 CEF binary")
-    endif()
+    set(_cef_family "windows")
     set(CEF_LIBRARY_EXTENSION "dll")
 else()
-    execute_process(
-        COMMAND uname -m
-        OUTPUT_VARIABLE MACHINE_ARCH_LINUX
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(MACHINE_ARCH_LINUX STREQUAL "aarch64" OR MACHINE_ARCH_LINUX STREQUAL "arm64")
-        set(CEF_PLATFORM "linuxarm64")
-        message(STATUS "Detected Linux ARM64 - using linuxarm64 CEF binary")
-    else()
-        set(CEF_PLATFORM "linux64")
-        message(STATUS "Detected Linux x64 - using linux64 CEF binary")
-    endif()
+    set(_cef_family "linux")
     set(CEF_LIBRARY_EXTENSION "so")
+endif()
+
+if(CEF_PLATFORM)
+    # Explicit override (command line, cache or parent project).
+    if(NOT CEF_PLATFORM IN_LIST _cef_valid_platforms)
+        message(FATAL_ERROR "Unsupported CEF_PLATFORM '${CEF_PLATFORM}'. Valid values: ${_cef_valid_platforms}")
+    endif()
+    message(STATUS "Using user-specified CEF platform: ${CEF_PLATFORM}")
+else()
+    if(CEF_TARGET_ARCH STREQUAL "arm64")
+        set(CEF_PLATFORM "${_cef_family}arm64")
+    elseif(CEF_TARGET_ARCH STREQUAL "x86_64")
+        if(_cef_family STREQUAL "macos")
+            set(CEF_PLATFORM "macosx64")
+        else()
+            set(CEF_PLATFORM "${_cef_family}64")
+        endif()
+    elseif(CEF_TARGET_ARCH STREQUAL "x86" AND _cef_family STREQUAL "windows")
+        set(CEF_PLATFORM "windows32")
+    else()
+        message(FATAL_ERROR "Unsupported ${_cef_family} target architecture '${CEF_TARGET_ARCH}'. Set CEF_PLATFORM explicitly.")
+    endif()
+    message(STATUS "Detected target ${_cef_family}/${CEF_TARGET_ARCH} - using ${CEF_PLATFORM} CEF binary")
+endif()
+
+# The SDK's cef_variables.cmake only recognizes ARM64 through macOS/MSVC-specific
+# names, so tell it the architecture unless the user already did.
+if(NOT DEFINED PROJECT_ARCH)
+    if(CEF_PLATFORM MATCHES "arm64$")
+        set(PROJECT_ARCH "arm64")
+    elseif(CEF_PLATFORM STREQUAL "windows32")
+        set(PROJECT_ARCH "x86")
+    else()
+        set(PROJECT_ARCH "x86_64")
+    endif()
 endif()
 
 # Function to verify CEF installation

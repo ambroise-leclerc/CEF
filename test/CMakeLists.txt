@@ -183,7 +183,7 @@ else()
     
     # On Windows, copy CEF binaries and resources to the test output directory
     if(WIN32)
-        # Use CEF 154's runtime manifest, which no longer lists standalone
+        # Use CEF 156's runtime manifest, which no longer lists standalone
         # libEGL/libGLESv2 DLLs and includes the Vulkan runtime files.
         set(CEF_WINDOW_TEST_WINDOWS_BINARIES ${CEF_BINARY_FILES})
         list(TRANSFORM CEF_WINDOW_TEST_WINDOWS_BINARIES PREPEND "${CEF_SOURCE_DIR}/Release/")
