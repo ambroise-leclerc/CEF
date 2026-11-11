@@ -36,7 +36,7 @@ if(NOT CEF_WRAPPER_BUILD_SKIP)
     set(ForceLoadWrapperStaticLibFile "$<TARGET_FILE:${CEF_WRAPPER_STATIC_LIBRARY_TARGET}>" CACHE INTERNAL "Path to the libcef_dll_wrapper static library for -force_load (using generator expression)")
     message(STATUS "CEF Wrapper static library target found: ${CEF_WRAPPER_STATIC_LIBRARY_TARGET}")
     
-    # CEF 154 headers require C++20, including for direct wrapper consumers.
+    # CEF 156 headers require C++20, including for direct wrapper consumers.
     target_compile_features(${CEF_WRAPPER_STATIC_LIBRARY_TARGET} PUBLIC cxx_std_20)
 
     # Match the wrapper's selected API in consumers. In particular, upstream

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 project(CEF LANGUAGES C CXX)
 
 # Set CEF version
-set(CEF_VERSION "154.0.34+g14c5a08+chromium-154.0.8037.98")
+set(CEF_VERSION "156.0.28+g57389f0+chromium-156.0.8078.88")
 
 # Include all CMake modules
 include(cmake/CEFOptions.cmake)

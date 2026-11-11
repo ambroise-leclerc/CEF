@@ -19,14 +19,14 @@ but also works with FetchContent, `add_subdirectory()` or an installed package.
 
 | | |
 |---|---|
-| Package tag | **`v154.0.34`** |
-| CEF | `154.0.34+g14c5a08+chromium-154.0.8037.98` |
-| Chromium | `154.0.8037.98` |
+| Package tag | **`v156.0.28`** |
+| CEF | `156.0.28+g57389f0+chromium-156.0.8078.88` |
+| Chromium | `156.0.8078.88` |
 | C++ standard | **C++20** (propagated to consumers by both targets) |
 | CMake | **3.24+** (CI uses 3.27.9) |
 
-Pin a release tag for reproducible builds. Tags `v137.*` package CEF 137 (C++17).
-Coming from CEF 137? Read the [CEF 154 upgrade notes](docs/CEF154_UPGRADE.md) and
+Pin a release tag for reproducible builds. Tags `v137.*` package CEF 137 (C++17) and `v154.*` package CEF 154.
+Coming from CEF 137 or 154? Read the [CEF 156 upgrade notes](docs/CEF156_UPGRADE.md) and
 reconfigure in a fresh build directory.
 
 ## Quick start
@@ -36,7 +36,7 @@ cmake_minimum_required(VERSION 3.24)
 project(my_app LANGUAGES CXX)
 
 include(cmake/CPM.cmake)  # https://github.com/cpm-cmake/CPM.cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF#v154.0.34")
+CPMAddPackage("gh:ambroise-leclerc/CEF#v156.0.28")
 
 add_executable(my_app main.cpp)
 
@@ -56,7 +56,7 @@ For a complete application see [`example/`](example/) (`simple_app.cpp`,
 CPMAddPackage(
   NAME cef
   GITHUB_REPOSITORY ambroise-leclerc/CEF
-  GIT_TAG v154.0.34
+  GIT_TAG v156.0.28
   OPTIONS
     "CEF_USE_MINIMAL_DIST ON"     # smaller _minimal distribution (default OFF)
     "CEF_ROBUST_DOWNLOAD ON"      # download with curl/wget fallbacks (default ON)
@@ -72,7 +72,7 @@ CPMAddPackage(
 | `CEF_WRAPPER_BUILD_SKIP` | `OFF` | Do not build `libcef_dll_wrapper`. |
 | `CEF_PLATFORM` | from target | Override the archive platform (`linux64`, `linuxarm64`, `macosx64`, `macosarm64`, `windows64`, `windowsarm64`, `windows32`). By default it is derived from the target (`CMAKE_SYSTEM_PROCESSOR`, `CMAKE_OSX_ARCHITECTURES`, generator platform), so cross-compiling works. |
 | `PROJECT_ARCH` | from `CEF_PLATFORM` | Architecture passed to the SDK (`x86_64`, `arm64`, `x86`); a user-provided value is kept. |
-| `api_version` | upstream default | CEF API version, e.g. `-Dapi_version=15400`. The wrapper's choice is propagated to consumers. |
+| `api_version` | upstream default | CEF API version, e.g. `-Dapi_version=15600`. The wrapper's choice is propagated to consumers. |
 
 The configured CEF version is checked against the distribution's headers: a
 stale cached distribution or an archive of another version stops the configure
@@ -92,7 +92,7 @@ cef_deploy_runtime(my_app)  # optional: copy the runtime files only
 include(FetchContent)
 FetchContent_Declare(cef
   GIT_REPOSITORY https://github.com/ambroise-leclerc/CEF.git
-  GIT_TAG        v154.0.34)
+  GIT_TAG        v156.0.28)
 FetchContent_MakeAvailable(cef)
 
 target_link_libraries(my_app PRIVATE cef libcef_dll_wrapper)
@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
 Two points that matter in practice:
 
 - **Subprocesses**: without the `CefExecuteProcess` early return, each subprocess
-  runs your `main()` and calls `CefInitialize` again. On Windows with CEF 154 this
+  runs your `main()` and calls `CefInitialize` again. On Windows with CEF 154 (and later) this
   crashes the GPU process repeatedly until CEF aborts.
 - **Profile directory**: two instances sharing one `root_cache_path` conflict.
   `CefString(std::string)` expects UTF-8: convert `std::filesystem::path` with
@@ -294,15 +294,15 @@ FetchContent, `add_subdirectory()` ou un paquet installé.
 
 | | |
 |---|---|
-| Tag du paquet | **`v154.0.34`** |
-| CEF | `154.0.34+g14c5a08+chromium-154.0.8037.98` |
-| Chromium | `154.0.8037.98` |
+| Tag du paquet | **`v156.0.28`** |
+| CEF | `156.0.28+g57389f0+chromium-156.0.8078.88` |
+| Chromium | `156.0.8078.88` |
 | Standard C++ | **C++20** (propagé aux consommateurs par les deux cibles) |
 | CMake | **3.24+** (la CI utilise 3.27.9) |
 
 Fixez un tag de version pour des compilations reproductibles. Les tags `v137.*`
-empaquettent CEF 137 (C++17). Si vous venez de CEF 137, lisez les
-[notes de migration vers CEF 154](docs/CEF154_UPGRADE.md) et reconfigurez dans un
+empaquettent CEF 137 (C++17) et `v154.*` CEF 154. Si vous venez de CEF 137 ou 154, lisez les
+[notes de migration vers CEF 156](docs/CEF156_UPGRADE.md) et reconfigurez dans un
 répertoire de compilation vierge.
 
 ### Démarrage rapide
@@ -312,7 +312,7 @@ cmake_minimum_required(VERSION 3.24)
 project(my_app LANGUAGES CXX)
 
 include(cmake/CPM.cmake)  # https://github.com/cpm-cmake/CPM.cmake
-CPMAddPackage("gh:ambroise-leclerc/CEF#v154.0.34")
+CPMAddPackage("gh:ambroise-leclerc/CEF#v156.0.28")
 
 add_executable(my_app main.cpp)
 
@@ -332,7 +332,7 @@ Pour une application complète, voir [`example/`](example/) (`simple_app.cpp`,
 CPMAddPackage(
   NAME cef
   GITHUB_REPOSITORY ambroise-leclerc/CEF
-  GIT_TAG v154.0.34
+  GIT_TAG v156.0.28
   OPTIONS
     "CEF_USE_MINIMAL_DIST ON"     # distribution _minimal, plus légère (OFF par défaut)
     "CEF_ROBUST_DOWNLOAD ON"      # téléchargement avec repli curl/wget (ON par défaut)
@@ -348,7 +348,7 @@ CPMAddPackage(
 | `CEF_WRAPPER_BUILD_SKIP` | `OFF` | Ne compile pas `libcef_dll_wrapper`. |
 | `CEF_PLATFORM` | selon la cible | Force la plateforme de l'archive (`linux64`, `linuxarm64`, `macosx64`, `macosarm64`, `windows64`, `windowsarm64`, `windows32`). Par défaut elle est déduite de la cible (`CMAKE_SYSTEM_PROCESSOR`, `CMAKE_OSX_ARCHITECTURES`, plateforme du générateur), ce qui permet la compilation croisée. |
 | `PROJECT_ARCH` | selon `CEF_PLATFORM` | Architecture transmise au SDK (`x86_64`, `arm64`, `x86`) ; une valeur fournie par l'utilisateur est conservée. |
-| `api_version` | défaut amont | Version de l'API CEF, par ex. `-Dapi_version=15400`. Le choix du wrapper est propagé aux consommateurs. |
+| `api_version` | défaut amont | Version de l'API CEF, par ex. `-Dapi_version=15600`. Le choix du wrapper est propagé aux consommateurs. |
 
 La version CEF configurée est comparée aux en-têtes de la distribution : une
 distribution en cache périmée ou une archive d'une autre version arrête la
@@ -368,7 +368,7 @@ cef_deploy_runtime(my_app)  # optionnel : copie seulement les fichiers runtime
 include(FetchContent)
 FetchContent_Declare(cef
   GIT_REPOSITORY https://github.com/ambroise-leclerc/CEF.git
-  GIT_TAG        v154.0.34)
+  GIT_TAG        v156.0.28)
 FetchContent_MakeAvailable(cef)
 
 target_link_libraries(my_app PRIVATE cef libcef_dll_wrapper)
@@ -458,7 +458,7 @@ Deux points importants en pratique :
 
 - **Sous-processus** : sans le retour anticipé via `CefExecuteProcess`, chaque
   sous-processus exécute votre `main()` et rappelle `CefInitialize`. Sous Windows
-  avec CEF 154, le processus GPU plante alors en boucle jusqu'à l'arrêt de CEF.
+  avec CEF 154 (et suivants), le processus GPU plante alors en boucle jusqu'à l'arrêt de CEF.
 - **Répertoire de profil** : deux instances qui partagent le même `root_cache_path`
   entrent en conflit. `CefString(std::string)` attend de l'UTF-8 : convertissez un
   `std::filesystem::path` avec `u8string()`, pas `string()` (MSVC utilise la page
