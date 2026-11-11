@@ -6,151 +6,55 @@
 
 > :fr: **La version française de ce README se trouve [plus bas](#version-française).**
 
-## Overview
+Embed a Chromium browser in your C++ application with a few lines of CMake.
+This repository packages the [Chromium Embedded Framework](https://bitbucket.org/chromiumembedded/cef)
+for Linux, macOS and Windows: it downloads the right CEF binaries, builds the
+C++ wrapper and copies the runtime next to your executable.
 
-This repository packages the [Chromium Embedded Framework (CEF)](https://bitbucket.org/chromiumembedded/cef)
-for CMake projects on Linux, macOS and Windows. At configure time it downloads the
-CEF binary distribution for the host platform, builds `libcef_dll_wrapper`, and
-exposes CMake targets plus helper functions that copy the CEF runtime next to your
-executable. It is designed for [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake)
-but also works with FetchContent, `add_subdirectory()` or an installed package.
-
-## Current release
-
-| | |
-|---|---|
-| Package tag | **`v156.0.28`** |
-| CEF | `156.0.28+g57389f0+chromium-156.0.8078.88` |
-| Chromium | `156.0.8078.88` |
-| C++ standard | **C++20** (propagated to consumers by both targets) |
-| CMake | **3.24+** (CI uses 3.27.9) |
-
-Pin a release tag for reproducible builds. Tags `v137.*` package CEF 137 (C++17) and `v154.*` package CEF 154.
-Coming from CEF 137 or 154? Read the [CEF 156 upgrade notes](docs/CEF156_UPGRADE.md) and
-reconfigure in a fresh build directory.
+**Current release:** `v156.0.28` · CEF 156.0.28 · Chromium 156.0.8078.88 · C++20 · CMake 3.24+
 
 ## Quick start
+
+With [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake):
 
 ```cmake
 cmake_minimum_required(VERSION 3.24)
 project(my_app LANGUAGES CXX)
 
-include(cmake/CPM.cmake)  # https://github.com/cpm-cmake/CPM.cmake
+include(cmake/CPM.cmake)
 CPMAddPackage("gh:ambroise-leclerc/CEF#v156.0.28")
 
 add_executable(my_app main.cpp)
-
-# Links cef + libcef_dll_wrapper, deploys the CEF runtime next to my_app
-# and sets the MSVC runtime library expected by CEF.
-cef_configure_app(my_app)
+cef_configure_app(my_app)   # link CEF, deploy the runtime, set up MSVC
 ```
 
-For a complete application see [`example/`](example/) (`simple_app.cpp`,
-`example_main.cpp`) and the window test [`test/cef_window_test.cpp`](test/cef_window_test.cpp).
+That is all: configure and build as usual. The first configure downloads CEF
+(a few hundred MB). Pin a release tag for reproducible builds.
 
-## Integration options
+FetchContent, `add_subdirectory()`, an installed package and all build options
+(minimal download, local archive, platform override, …) are described in
+[`docs/CONFIGURATION.md`](docs/CONFIGURATION.md).
 
-### CPM.cmake with options
+## Supported platforms
 
-```cmake
-CPMAddPackage(
-  NAME cef
-  GITHUB_REPOSITORY ambroise-leclerc/CEF
-  GIT_TAG v156.0.28
-  OPTIONS
-    "CEF_USE_MINIMAL_DIST ON"     # smaller _minimal distribution (default OFF)
-    "CEF_ROBUST_DOWNLOAD ON"      # download with curl/wget fallbacks (default ON)
-)
-```
-
-| Option | Default | Effect |
-|---|---|---|
-| `CEF_USE_MINIMAL_DIST` | `OFF` | Download the `_minimal` distribution: Release binaries only, without debug builds or sample applications. |
-| `CEF_ROBUST_DOWNLOAD` | `ON` | Retry the download with CMake, then curl, then wget. |
-| `CEF_LOCAL_ARCHIVE_PATH` | empty | Use a CEF archive already on disk instead of downloading it. |
-| `FETCHCONTENT_SOURCE_DIR_CEF_BINARIES` | empty | Reuse an already extracted CEF distribution (no download at all). |
-| `CEF_WRAPPER_BUILD_SKIP` | `OFF` | Do not build `libcef_dll_wrapper`. |
-| `CEF_PLATFORM` | from target | Override the archive platform (`linux64`, `linuxarm64`, `macosx64`, `macosarm64`, `windows64`, `windowsarm64`, `windows32`). By default it is derived from the target (`CMAKE_SYSTEM_PROCESSOR`, `CMAKE_OSX_ARCHITECTURES`, generator platform), so cross-compiling works. |
-| `PROJECT_ARCH` | from `CEF_PLATFORM` | Architecture passed to the SDK (`x86_64`, `arm64`, `x86`); a user-provided value is kept. |
-| `api_version` | upstream default | CEF API version, e.g. `-Dapi_version=15600`. The wrapper's choice is propagated to consumers. |
-
-The configured CEF version is checked against the distribution's headers: a
-stale cached distribution or an archive of another version stops the configure
-step with an explicit error.
-
-### Manual linking
-
-```cmake
-add_executable(my_app main.cpp)
-target_link_libraries(my_app PRIVATE cef libcef_dll_wrapper)
-cef_deploy_runtime(my_app)  # optional: copy the runtime files only
-```
-
-### FetchContent or add_subdirectory
-
-```cmake
-include(FetchContent)
-FetchContent_Declare(cef
-  GIT_REPOSITORY https://github.com/ambroise-leclerc/CEF.git
-  GIT_TAG        v156.0.28)
-FetchContent_MakeAvailable(cef)
-
-target_link_libraries(my_app PRIVATE cef libcef_dll_wrapper)
-```
-
-`add_subdirectory(path/to/CEF)` on a checkout of the tag works the same way.
-
-### Installed package
-
-`cmake --install` exports namespaced targets and the CEF headers:
-
-```cmake
-find_package(CEF REQUIRED)
-target_link_libraries(my_app PRIVATE CEF::cef CEF::libcef_dll_wrapper)
-```
-
-The installed package does not ship the runtime files nor the deployment
-functions below: deploy `libcef`, its resources and locales yourself.
-
-## Targets
-
-| CPM / FetchContent / subdirectory | Installed package | Content |
-|---|---|---|
-| `cef` | `CEF::cef` | CEF headers and the `libcef` library or macOS framework. |
-| `libcef_dll_wrapper` | `CEF::libcef_dll_wrapper` | C++ wrapper (`CefRefPtr`, `IMPLEMENT_REFCOUNTING`, `CefPostTask`, …). Required by C++ applications. |
-
-Both targets require C++20 and propagate the selected `CEF_API_VERSION`.
-
-## Runtime deployment
-
-| Function | Purpose |
+| Platform | Status |
 |---|---|
-| `cef_configure_app(target)` | Link both targets, deploy the runtime, set the static MSVC runtime on Windows. |
-| `cef_deploy_runtime(target)` | Deploy the runtime only. |
-| `cef_get_settings_paths(var)` | Return C++ lines setting `resources_dir_path` / `locales_dir_path` for the deployed layout. |
+| Linux x64 | ✅ Built and tested in CI (Ubuntu 22.04) |
+| macOS ARM64 | ✅ Built and tested in CI (macos-latest) |
+| Windows x64 | ✅ Built and tested in CI (Windows Server 2022) |
+| Linux ARM64 | ☑️ Built and tested natively (aarch64), not in CI |
+| macOS x64 | ⚠️ Archive available, untested |
+| Windows ARM64 | ⚠️ Archive available, untested |
+| Windows x86 | ⚠️ Archive available, untested |
 
-After the build, the executable directory contains:
+The platform is chosen from the **target** architecture, so cross-compiling
+works; override it with `-DCEF_PLATFORM=…` if needed. Compiler requirements:
+GCC 10+ or a C++20 Clang on Linux, Xcode 16+ on macOS, Visual Studio 2022 on Windows.
 
-- **Windows / Linux**: the binaries from the distribution's `Release/` directory
-  (`libcef.dll` or `libcef.so`, `chrome_elf.dll`, `chrome-sandbox`,
-  `v8_context_snapshot.bin`, ANGLE and SwiftShader/Vulkan files when present),
-  the resources from `Resources/` (`icudtl.dat`, `*.pak`, `locales/`), and a copy
-  of them in `Resources/`. CEF finds them with no path set; `cef_get_settings_paths()`
-  points to the `Resources/` copy.
-- **macOS**: `Chromium Embedded Framework.framework` in the bundle's `Frameworks/`.
-  Load it at runtime with `CefScopedLibraryLoader`.
-- **Linux sandbox**: the build prints the `sudo chown root:root` / `chmod 4755`
-  command for `chrome-sandbox` but never runs it. Run it yourself or set
-  `settings.no_sandbox = true`.
-
-Details: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
-
-## Writing a CEF application
+## A minimal application
 
 ```cpp
 #include "include/cef_app.h"
-#include "include/views/cef_browser_view.h"
-#include "include/views/cef_window.h"
 #include "include/wrapper/cef_helpers.h"
 
 int main(int argc, char* argv[]) {
@@ -178,48 +82,16 @@ int main(int argc, char* argv[]) {
 }
 ```
 
-Two points that matter in practice:
+Two things trip people up:
 
-- **Subprocesses**: without the `CefExecuteProcess` early return, each subprocess
-  runs your `main()` and calls `CefInitialize` again. On Windows with CEF 154 (and later) this
-  crashes the GPU process repeatedly until CEF aborts.
-- **Profile directory**: two instances sharing one `root_cache_path` conflict.
-  `CefString(std::string)` expects UTF-8: convert `std::filesystem::path` with
-  `u8string()`, not `string()` (MSVC uses the local code page).
+- **Call `CefExecuteProcess` first.** Otherwise every subprocess runs your `main()` again
+  and, on Windows, the GPU process crashes repeatedly.
+- **One profile directory per instance** (`root_cache_path`), given as UTF-8:
+  use `std::filesystem::path::u8string()`, not `string()`.
 
-`test/cef_window_test.cpp` applies both: a unique profile per run under
-`std::filesystem::temp_directory_path()`, removed after `CefShutdown()`.
+Complete examples: [`example/`](example/) and [`test/cef_window_test.cpp`](test/cef_window_test.cpp).
 
-## Supported platforms
-
-| Platform | Distribution | CI |
-|---|---|---|
-| Linux x64 | `linux64` | ✅ Ubuntu 22.04 |
-| Linux ARM64 | `linuxarm64` | — |
-| macOS x64 | `macosx64` | — |
-| macOS ARM64 | `macosarm64` | ✅ macos-latest |
-| Windows x64 | `windows64` | ✅ Windows Server 2022 |
-| Windows x86 | `windows32` | — |
-| Windows ARM64 | `windowsarm64` | — |
-
-The distribution is chosen from the host OS and architecture at configure time.
-Archives for all seven variants were checked for this release; only the variants
-marked ✅ are built and tested in CI.
-
-Build requirements:
-
-- **Linux**: GCC 10+ or a C++20 Clang; X11 development packages to run the window test.
-- **macOS**: Xcode 16+ (macOS 14.5+ recommended as build host). The ARM64
-  framework requires macOS 13.0+ at runtime.
-- **Windows**: Visual Studio 2022 with the C++ workload and a Windows 10/11 SDK.
-
-## Tests
-
-| Test | Checks |
-|---|---|
-| `cef_sanity_test` | Loads the CEF library, checks that the runtime's version components match the headers, fills `CefMainArgs`/`CefSettings`. |
-| `cef_resources_test` | Presence of the platform binaries (`libcef.*` or the framework) and of the resources. |
-| `cef_window_test` | Opens a real CEF Views window, renders HTML and closes it after 3 s. Uses an isolated profile per run and dispatches subprocesses through `CefExecuteProcess`. |
+## Run the tests
 
 ```bash
 cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
@@ -227,206 +99,79 @@ cmake --build build --config Release
 ctest --test-dir build/test -C Release --output-on-failure
 ```
 
-On Linux without a display, start a virtual one first
-(`Xvfb :99 & export DISPLAY=:99`); CTest sets `DISPLAY=:99` for the window test.
+Three tests: a version/sanity check, a check that the runtime files are present, and a
+window test that opens a real CEF window. Without a display on Linux, run
+`Xvfb :99 & export DISPLAY=:99` first.
 
-## Continuous integration
+## More documentation
 
-`.github/workflows/{linux,macos,windows}.yml` run on every push and pull request,
-for both the full and the minimal distribution:
-
-1. configure and build the package and its three tests;
-2. run them with CTest;
-3. build the [`example/`](example/) applications against the downloaded
-   distribution and run their deployment test (`cef_example_deployment`);
-4. upload the build artifacts.
-
-## Maintainers
-
-- **Changing the CEF version**: update `CEF_VERSION` in `CMakeLists.txt`, check that
-  the [CEF build index](https://cef-builds.spotifycdn.com/index.json) lists standard
-  and minimal archives for every platform, then reconfigure from a clean build directory.
-- **Releasing**: once CI passes on `main`, tag `v<CEF major>.<minor>.<patch>` and
-  publish a GitHub release; update the tag in this README.
-- **Dev container**: `.devcontainer/` provides a Linux environment matching CI.
-
-## Troubleshooting
-
-- **Download fails or stalls**: keep `CEF_ROBUST_DOWNLOAD=ON`, try
-  `CEF_USE_MINIMAL_DIST=ON`, or download the archive manually and pass
-  `-DCEF_LOCAL_ARCHIVE_PATH=/path/to/cef_binary_….tar.bz2`.
-- **`CEF distribution version mismatch`**: the build directory or archive holds
-  another CEF version. Delete the build directory or provide the matching archive.
-- **HTTP 404 on download**: the configured version has no build for this platform;
-  check the [CEF builds](https://cef-builds.spotifycdn.com/index.html) page.
-- **`GPU process isn't usable` / repeated subprocess crashes**: subprocesses are
-  not dispatched; see [Writing a CEF application](#writing-a-cef-application).
-- **Linux: `chrome-sandbox` error at startup**: apply the SUID command printed by
-  the build or disable the sandbox.
+- [Configuration, integration options, deployment, troubleshooting](docs/CONFIGURATION.md)
+- [Runtime deployment details](docs/DEPLOYMENT.md)
+- [Upgrading from CEF 137 or 154](docs/CEF156_UPGRADE.md): tags `v137.*` and `v154.*` package older CEF versions
 
 ## Licensing
 
-This project is distributed under the CeCILL Free Software License Agreement v2.1;
-see [`CECILL-LICENSE.txt`](CECILL-LICENSE.txt). CEF and Chromium are distributed
-under their own licences, included in the downloaded distribution.
+Distributed under the CeCILL Free Software License Agreement v2.1; see
+[`CECILL-LICENSE.txt`](CECILL-LICENSE.txt). CEF and Chromium keep their own
+licences, included in the downloaded distribution.
 
-## Acknowledgements
-
-- [Chromium Embedded Framework](https://bitbucket.org/chromiumembedded/cef)
-- [CMake](https://cmake.org/)
-- [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake)
+Thanks to [Chromium Embedded Framework](https://bitbucket.org/chromiumembedded/cef),
+[CMake](https://cmake.org/) and [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake).
 
 ---
 
 ## Version française
 
-### Présentation
+Intégrez un navigateur Chromium dans votre application C++ avec quelques lignes
+de CMake. Ce dépôt empaquette le [Chromium Embedded Framework](https://bitbucket.org/chromiumembedded/cef)
+pour Linux, macOS et Windows : il télécharge les bons binaires CEF, compile le
+wrapper C++ et copie le runtime à côté de votre exécutable.
 
-Ce dépôt empaquette le [Chromium Embedded Framework (CEF)](https://bitbucket.org/chromiumembedded/cef)
-pour les projets CMake sous Linux, macOS et Windows. À la configuration, il
-télécharge la distribution binaire CEF de la plateforme, compile
-`libcef_dll_wrapper` et fournit des cibles CMake ainsi que des fonctions qui
-copient le runtime CEF à côté de votre exécutable. Il est conçu pour
-[CPM.cmake](https://github.com/cpm-cmake/CPM.cmake) mais fonctionne aussi avec
-FetchContent, `add_subdirectory()` ou un paquet installé.
-
-### Version actuelle
-
-| | |
-|---|---|
-| Tag du paquet | **`v156.0.28`** |
-| CEF | `156.0.28+g57389f0+chromium-156.0.8078.88` |
-| Chromium | `156.0.8078.88` |
-| Standard C++ | **C++20** (propagé aux consommateurs par les deux cibles) |
-| CMake | **3.24+** (la CI utilise 3.27.9) |
-
-Fixez un tag de version pour des compilations reproductibles. Les tags `v137.*`
-empaquettent CEF 137 (C++17) et `v154.*` CEF 154. Si vous venez de CEF 137 ou 154, lisez les
-[notes de migration vers CEF 156](docs/CEF156_UPGRADE.md) et reconfigurez dans un
-répertoire de compilation vierge.
+**Version actuelle :** `v156.0.28` · CEF 156.0.28 · Chromium 156.0.8078.88 · C++20 · CMake 3.24+
 
 ### Démarrage rapide
+
+Avec [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake) :
 
 ```cmake
 cmake_minimum_required(VERSION 3.24)
 project(my_app LANGUAGES CXX)
 
-include(cmake/CPM.cmake)  # https://github.com/cpm-cmake/CPM.cmake
+include(cmake/CPM.cmake)
 CPMAddPackage("gh:ambroise-leclerc/CEF#v156.0.28")
 
 add_executable(my_app main.cpp)
-
-# Lie cef + libcef_dll_wrapper, déploie le runtime CEF à côté de my_app
-# et choisit le runtime MSVC attendu par CEF.
-cef_configure_app(my_app)
+cef_configure_app(my_app)   # lie CEF, déploie le runtime, configure MSVC
 ```
 
-Pour une application complète, voir [`example/`](example/) (`simple_app.cpp`,
-`example_main.cpp`) et le test de fenêtre [`test/cef_window_test.cpp`](test/cef_window_test.cpp).
+C'est tout : configurez et compilez comme d'habitude. La première configuration
+télécharge CEF (quelques centaines de Mo). Fixez un tag de version pour des
+compilations reproductibles.
 
-### Options d'intégration
+FetchContent, `add_subdirectory()`, le paquet installé et toutes les options
+(téléchargement minimal, archive locale, forçage de plateforme…) sont décrits dans
+[`docs/CONFIGURATION.md`](docs/CONFIGURATION.md).
 
-#### CPM.cmake avec options
+### Plateformes supportées
 
-```cmake
-CPMAddPackage(
-  NAME cef
-  GITHUB_REPOSITORY ambroise-leclerc/CEF
-  GIT_TAG v156.0.28
-  OPTIONS
-    "CEF_USE_MINIMAL_DIST ON"     # distribution _minimal, plus légère (OFF par défaut)
-    "CEF_ROBUST_DOWNLOAD ON"      # téléchargement avec repli curl/wget (ON par défaut)
-)
-```
-
-| Option | Défaut | Effet |
-|---|---|---|
-| `CEF_USE_MINIMAL_DIST` | `OFF` | Télécharge la distribution `_minimal` : binaires Release uniquement, sans builds de débogage ni applications d'exemple. |
-| `CEF_ROBUST_DOWNLOAD` | `ON` | Réessaie le téléchargement avec CMake, puis curl, puis wget. |
-| `CEF_LOCAL_ARCHIVE_PATH` | vide | Utilise une archive CEF déjà présente au lieu de la télécharger. |
-| `FETCHCONTENT_SOURCE_DIR_CEF_BINARIES` | vide | Réutilise une distribution CEF déjà extraite (aucun téléchargement). |
-| `CEF_WRAPPER_BUILD_SKIP` | `OFF` | Ne compile pas `libcef_dll_wrapper`. |
-| `CEF_PLATFORM` | selon la cible | Force la plateforme de l'archive (`linux64`, `linuxarm64`, `macosx64`, `macosarm64`, `windows64`, `windowsarm64`, `windows32`). Par défaut elle est déduite de la cible (`CMAKE_SYSTEM_PROCESSOR`, `CMAKE_OSX_ARCHITECTURES`, plateforme du générateur), ce qui permet la compilation croisée. |
-| `PROJECT_ARCH` | selon `CEF_PLATFORM` | Architecture transmise au SDK (`x86_64`, `arm64`, `x86`) ; une valeur fournie par l'utilisateur est conservée. |
-| `api_version` | défaut amont | Version de l'API CEF, par ex. `-Dapi_version=15600`. Le choix du wrapper est propagé aux consommateurs. |
-
-La version CEF configurée est comparée aux en-têtes de la distribution : une
-distribution en cache périmée ou une archive d'une autre version arrête la
-configuration avec une erreur explicite.
-
-#### Liaison manuelle
-
-```cmake
-add_executable(my_app main.cpp)
-target_link_libraries(my_app PRIVATE cef libcef_dll_wrapper)
-cef_deploy_runtime(my_app)  # optionnel : copie seulement les fichiers runtime
-```
-
-#### FetchContent ou add_subdirectory
-
-```cmake
-include(FetchContent)
-FetchContent_Declare(cef
-  GIT_REPOSITORY https://github.com/ambroise-leclerc/CEF.git
-  GIT_TAG        v156.0.28)
-FetchContent_MakeAvailable(cef)
-
-target_link_libraries(my_app PRIVATE cef libcef_dll_wrapper)
-```
-
-`add_subdirectory(chemin/vers/CEF)` sur une copie du tag fonctionne de la même façon.
-
-#### Paquet installé
-
-`cmake --install` exporte des cibles préfixées et les en-têtes CEF :
-
-```cmake
-find_package(CEF REQUIRED)
-target_link_libraries(my_app PRIVATE CEF::cef CEF::libcef_dll_wrapper)
-```
-
-Le paquet installé ne contient ni les fichiers runtime ni les fonctions de
-déploiement ci-dessous : déployez vous-même `libcef`, ses ressources et ses locales.
-
-### Cibles
-
-| CPM / FetchContent / sous-répertoire | Paquet installé | Contenu |
-|---|---|---|
-| `cef` | `CEF::cef` | En-têtes CEF et bibliothèque `libcef` ou framework macOS. |
-| `libcef_dll_wrapper` | `CEF::libcef_dll_wrapper` | Wrapper C++ (`CefRefPtr`, `IMPLEMENT_REFCOUNTING`, `CefPostTask`…). Indispensable aux applications C++. |
-
-Les deux cibles exigent C++20 et propagent la valeur de `CEF_API_VERSION` retenue.
-
-### Déploiement du runtime
-
-| Fonction | Rôle |
+| Plateforme | Statut |
 |---|---|
-| `cef_configure_app(cible)` | Lie les deux cibles, déploie le runtime, choisit le runtime MSVC statique sous Windows. |
-| `cef_deploy_runtime(cible)` | Déploie seulement le runtime. |
-| `cef_get_settings_paths(var)` | Renvoie les lignes C++ qui fixent `resources_dir_path` / `locales_dir_path` pour la disposition déployée. |
+| Linux x64 | ✅ Compilé et testé en CI (Ubuntu 22.04) |
+| macOS ARM64 | ✅ Compilé et testé en CI (macos-latest) |
+| Windows x64 | ✅ Compilé et testé en CI (Windows Server 2022) |
+| Linux ARM64 | ☑️ Compilé et testé nativement (aarch64), hors CI |
+| macOS x64 | ⚠️ Archive disponible, non testé |
+| Windows ARM64 | ⚠️ Archive disponible, non testé |
+| Windows x86 | ⚠️ Archive disponible, non testé |
 
-Après la compilation, le répertoire de l'exécutable contient :
+La plateforme est choisie selon l'architecture **cible** : la compilation croisée
+fonctionne ; forcez-la avec `-DCEF_PLATFORM=…` si besoin. Compilateurs requis :
+GCC 10+ ou Clang compatible C++20 sous Linux, Xcode 16+ sous macOS, Visual Studio 2022 sous Windows.
 
-- **Windows / Linux** : les binaires du répertoire `Release/` de la distribution
-  (`libcef.dll` ou `libcef.so`, `chrome_elf.dll`, `chrome-sandbox`,
-  `v8_context_snapshot.bin`, fichiers ANGLE et SwiftShader/Vulkan s'ils existent),
-  les ressources de `Resources/` (`icudtl.dat`, `*.pak`, `locales/`), et une copie
-  de celles-ci dans `Resources/`. CEF les trouve sans chemin configuré ;
-  `cef_get_settings_paths()` pointe vers la copie dans `Resources/`.
-- **macOS** : `Chromium Embedded Framework.framework` dans le dossier `Frameworks/`
-  du bundle. Chargez-le à l'exécution avec `CefScopedLibraryLoader`.
-- **Sandbox Linux** : la compilation affiche la commande `sudo chown root:root` /
-  `chmod 4755` pour `chrome-sandbox` mais ne l'exécute jamais. Lancez-la
-  vous-même ou utilisez `settings.no_sandbox = true`.
-
-Détails : [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
-
-### Écrire une application CEF
+### Une application minimale
 
 ```cpp
 #include "include/cef_app.h"
-#include "include/views/cef_browser_view.h"
-#include "include/views/cef_window.h"
 #include "include/wrapper/cef_helpers.h"
 
 int main(int argc, char* argv[]) {
@@ -454,50 +199,16 @@ int main(int argc, char* argv[]) {
 }
 ```
 
-Deux points importants en pratique :
+Deux pièges classiques :
 
-- **Sous-processus** : sans le retour anticipé via `CefExecuteProcess`, chaque
-  sous-processus exécute votre `main()` et rappelle `CefInitialize`. Sous Windows
-  avec CEF 154 (et suivants), le processus GPU plante alors en boucle jusqu'à l'arrêt de CEF.
-- **Répertoire de profil** : deux instances qui partagent le même `root_cache_path`
-  entrent en conflit. `CefString(std::string)` attend de l'UTF-8 : convertissez un
-  `std::filesystem::path` avec `u8string()`, pas `string()` (MSVC utilise la page
-  de code locale).
+- **Appelez `CefExecuteProcess` en premier.** Sinon chaque sous-processus réexécute votre
+  `main()` et, sous Windows, le processus GPU plante en boucle.
+- **Un répertoire de profil par instance** (`root_cache_path`), en UTF-8 :
+  utilisez `std::filesystem::path::u8string()`, pas `string()`.
 
-`test/cef_window_test.cpp` applique les deux : un profil unique par exécution
-sous `std::filesystem::temp_directory_path()`, supprimé après `CefShutdown()`.
+Exemples complets : [`example/`](example/) et [`test/cef_window_test.cpp`](test/cef_window_test.cpp).
 
-### Plateformes supportées
-
-| Plateforme | Distribution | CI |
-|---|---|---|
-| Linux x64 | `linux64` | ✅ Ubuntu 22.04 |
-| Linux ARM64 | `linuxarm64` | — |
-| macOS x64 | `macosx64` | — |
-| macOS ARM64 | `macosarm64` | ✅ macos-latest |
-| Windows x64 | `windows64` | ✅ Windows Server 2022 |
-| Windows x86 | `windows32` | — |
-| Windows ARM64 | `windowsarm64` | — |
-
-La distribution est choisie selon le système et l'architecture de la machine au
-moment de la configuration. Les archives des sept variantes ont été vérifiées pour
-cette version ; seules les variantes marquées ✅ sont compilées et testées en CI.
-
-Prérequis de compilation :
-
-- **Linux** : GCC 10+ ou Clang compatible C++20 ; paquets de développement X11
-  pour exécuter le test de fenêtre.
-- **macOS** : Xcode 16+ (macOS 14.5+ recommandé pour compiler). Le framework
-  ARM64 exige macOS 13.0+ à l'exécution.
-- **Windows** : Visual Studio 2022 avec la charge de travail C++ et un SDK Windows 10/11.
-
-### Tests
-
-| Test | Vérifie |
-|---|---|
-| `cef_sanity_test` | Charge la bibliothèque CEF, vérifie que les composantes de version du runtime correspondent aux en-têtes, remplit `CefMainArgs`/`CefSettings`. |
-| `cef_resources_test` | Présence des binaires de la plateforme (`libcef.*` ou le framework) et des ressources. |
-| `cef_window_test` | Ouvre une vraie fenêtre CEF Views, affiche du HTML et la ferme au bout de 3 s. Utilise un profil isolé par exécution et redirige les sous-processus vers `CefExecuteProcess`. |
+### Lancer les tests
 
 ```bash
 cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
@@ -505,55 +216,21 @@ cmake --build build --config Release
 ctest --test-dir build/test -C Release --output-on-failure
 ```
 
-Sous Linux sans écran, démarrez d'abord un affichage virtuel
-(`Xvfb :99 & export DISPLAY=:99`) ; CTest fixe `DISPLAY=:99` pour le test de fenêtre.
+Trois tests : un contrôle de version, un contrôle de présence des fichiers runtime, et
+un test qui ouvre une vraie fenêtre CEF. Sous Linux sans écran, lancez d'abord
+`Xvfb :99 & export DISPLAY=:99`.
 
-### Intégration continue
+### Pour aller plus loin
 
-`.github/workflows/{linux,macos,windows}.yml` s'exécutent à chaque push et pull
-request, pour la distribution complète et la distribution minimale :
-
-1. configuration et compilation du paquet et de ses trois tests ;
-2. exécution des tests avec CTest ;
-3. compilation des applications de [`example/`](example/) avec la distribution
-   téléchargée et exécution de leur test de déploiement (`cef_example_deployment`) ;
-4. publication des artefacts de compilation.
-
-### Mainteneurs
-
-- **Changer de version de CEF** : modifiez `CEF_VERSION` dans `CMakeLists.txt`,
-  vérifiez que l'[index des builds CEF](https://cef-builds.spotifycdn.com/index.json)
-  propose les archives standard et minimale pour chaque plateforme, puis
-  reconfigurez depuis un répertoire de compilation vierge.
-- **Publier une version** : une fois la CI au vert sur `main`, créez le tag
-  `v<majeure CEF>.<mineure>.<correctif>` et publiez une release GitHub ;
-  mettez à jour le tag dans ce README.
-- **Conteneur de développement** : `.devcontainer/` fournit un environnement
-  Linux identique à la CI.
-
-### Dépannage
-
-- **Téléchargement en échec ou bloqué** : gardez `CEF_ROBUST_DOWNLOAD=ON`, essayez
-  `CEF_USE_MINIMAL_DIST=ON`, ou téléchargez l'archive vous-même et passez
-  `-DCEF_LOCAL_ARCHIVE_PATH=/chemin/vers/cef_binary_….tar.bz2`.
-- **`CEF distribution version mismatch`** : le répertoire de compilation ou
-  l'archive contient une autre version de CEF. Supprimez le répertoire de
-  compilation ou fournissez l'archive correspondante.
-- **HTTP 404 au téléchargement** : la version configurée n'existe pas pour cette
-  plateforme ; consultez la page des [builds CEF](https://cef-builds.spotifycdn.com/index.html).
-- **`GPU process isn't usable` / plantages répétés des sous-processus** : les
-  sous-processus ne sont pas redirigés ; voir [Écrire une application CEF](#écrire-une-application-cef).
-- **Linux : erreur `chrome-sandbox` au démarrage** : appliquez la commande SUID
-  affichée par la compilation ou désactivez la sandbox.
+- [Configuration, options d'intégration, déploiement, dépannage](docs/CONFIGURATION.md)
+- [Détails du déploiement du runtime](docs/DEPLOYMENT.md)
+- [Migrer depuis CEF 137 ou 154](docs/CEF156_UPGRADE.md) : les tags `v137.*` et `v154.*` empaquettent des versions plus anciennes de CEF
 
 ### Licence
 
-Ce projet est distribué sous la licence de logiciel libre CeCILL v2.1 ;
-voir [`CECILL-LICENSE.txt`](CECILL-LICENSE.txt). CEF et Chromium sont distribués
-sous leurs propres licences, incluses dans la distribution téléchargée.
+Distribué sous la licence de logiciel libre CeCILL v2.1 ; voir
+[`CECILL-LICENSE.txt`](CECILL-LICENSE.txt). CEF et Chromium gardent leurs propres
+licences, incluses dans la distribution téléchargée.
 
-### Remerciements
-
-- [Chromium Embedded Framework](https://bitbucket.org/chromiumembedded/cef)
-- [CMake](https://cmake.org/)
-- [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake)
+Merci à [Chromium Embedded Framework](https://bitbucket.org/chromiumembedded/cef),
+[CMake](https://cmake.org/) et [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake).
